@@ -585,7 +585,7 @@ return false;
 let isNavigatingProgrammatically = false;
 
 // Initialize history entry on startup
-if (history.state === null) {
+if (!history.state || !history.state.screen) {
 history.replaceState({ screen: 'screen-menu' }, '');
 }
 
@@ -594,7 +594,21 @@ const currentScreen = getCurrentScreenId();
 
 if (pushHistory && currentScreen !== screenId) {
 isNavigatingProgrammatically = true;
+
+if (screenId === 'screen-menu') {
+// Re-anchor history state at main screen
+history.replaceState({ screen: 'screen-menu' }, '');
+} else {
+const isSubScreen = (currentScreen === 'screen-profiles' || currentScreen === 'screen-stats');
+const isNewSubScreen = (screenId === 'screen-profiles' || screenId === 'screen-stats');
+
+// Replaces state when switching between sub-screens so Back button always leads back to Main Menu
+if (isSubScreen && isNewSubScreen) {
+history.replaceState({ screen: screenId }, '');
+} else {
 history.pushState({ screen: screenId }, '');
+}
+}
 isNavigatingProgrammatically = false;
 }
 
@@ -620,20 +634,42 @@ return 'screen-menu';
 window.addEventListener('popstate', function (e) {
 if (isNavigatingProgrammatically) return;
 
-const currentScreen = getCurrentScreenId();
-const exitModalOpen = !document.getElementById('exit-modal').classList.contains('hidden');
+// 1. Close open modals first on back button press
+const exitModal = document.getElementById('exit-modal');
+const newProfileModal = document.getElementById('new-profile-modal');
+const deleteProfileModal = document.getElementById('delete-profile-modal');
 
-if (currentScreen === 'screen-x01' && !match.isFinished) {
-// Push state back so history position remains on game screen while prompt is active
-history.pushState({ screen: 'screen-x01' }, '');
-pendingTargetScreen = e.state?.screen || 'screen-menu';
-document.getElementById('exit-modal').classList.remove('hidden');
-} else if (exitModalOpen) {
+if (exitModal && !exitModal.classList.contains('hidden')) {
 closeExitModal();
-} else {
-const targetScreen = e.state?.screen || 'screen-menu';
-showScreen(targetScreen, false);
+return;
 }
+if (newProfileModal && !newProfileModal.classList.contains('hidden')) {
+closeNewProfileModal();
+return;
+}
+if (deleteProfileModal && !deleteProfileModal.classList.contains('hidden')) {
+closeDeleteProfileModal();
+return;
+}
+
+const currentScreen = getCurrentScreenId();
+
+// 2. Protection during active match
+if (currentScreen === 'screen-x01' && !match.isFinished) {
+history.pushState({ screen: 'screen-x01' }, '');
+pendingTargetScreen = 'screen-menu';
+document.getElementById('exit-modal').classList.remove('hidden');
+return;
+}
+
+// 3. Sub-screens (Profiles, Statistics, Completed Match) return directly to Main Menu
+if (currentScreen === 'screen-profiles' || currentScreen === 'screen-stats' || currentScreen === 'screen-x01') {
+showScreen('screen-menu', false);
+history.replaceState({ screen: 'screen-menu' }, '');
+return;
+}
+
+// 4. If user is on Main Menu (`screen-menu`), do NOT intercept -> natural exit/back behavior handles app exit
 });
 
 // Guard browser/tab reload or exit during active match
@@ -671,7 +707,7 @@ document.getElementById('exit-modal').classList.add('hidden');
 
 function executeHomeExit() {
 document.getElementById('exit-modal').classList.add('hidden');
-// If exiting early without finishing match, save completed leg statistics without declaring match completion
+// Save completed leg statistics without declaring match completion
 recordMatchStats(null, true, false);
 match.isFinished = true;
 showScreen(pendingTargetScreen);
@@ -1198,7 +1234,6 @@ if (scoredPoints > 180) {
 return;
 }
 
-// Any attempt to leave a score of 1, or reach 0 from a score > 170 (max checkout is 170) is a BUST
 if (scoredPoints > activeP.score || (activeP.score - scoredPoints === 1) || (activeP.score - scoredPoints === 0 && activeP.score > 170)) {
 scoredPoints = 0;
 dartsThrown = 3;
@@ -1211,7 +1246,6 @@ isSuccessfulCheckout = true;
 
 saveTurnHistoryState();
 
-// Record first 9 statistics per leg (check legDartsThrown before incrementing)
 if (activeP.legDartsThrown < 9) {
 activeP.first9Points += scoredPoints;
 activeP.first9Darts += dartsThrown;
@@ -1342,7 +1376,6 @@ document.getElementById('win-modal').classList.remove('hidden');
 function cancelWinAndUndo() {
 document.getElementById('win-modal').classList.add('hidden');
 
-// Revert leg/set count changes if the win was opened
 if (pendingWinningPlayer) {
 if (isMatchOver) {
 pendingWinningPlayer.setsWon -= 1;
@@ -1375,11 +1408,9 @@ if (isMatchOver) {
 const winnerId = pendingWinningPlayer ? pendingWinningPlayer.id : null;
 const gameType = match.type;
 
-// Save full completed match
 recordMatchStats(pendingWinningPlayer, false, true);
 match.isFinished = true;
 
-// Pre-set filters on the statistics screen for immediate review
 document.getElementById('stats-time-filter').value = 'recent';
 document.getElementById('stats-gamemode-select').value = gameType;
 if (winnerId) {
@@ -1427,7 +1458,6 @@ renderX01UI();
 function recordMatchStats(winner, isAbandoned = false, isCompleted = false) {
 const totalLegsInMatch = match.players.reduce((sum, p) => sum + (p.totalLegsWon || 0), 0);
 
-// Do not save anything if no legs were completed
 if (totalLegsInMatch === 0) return;
 
 const matchRecord = {
@@ -1458,7 +1488,6 @@ isWinner: winner ? p.id === winner.id : false
 }))
 };
 
-// Replace existing record if saving incremental updates from same session ID
 const existingIndex = matchStatsHistory.findIndex(m => m.sessionId === match.sessionId);
 if (existingIndex !== -1) {
 matchStatsHistory[existingIndex] = matchRecord;
@@ -1482,7 +1511,6 @@ if (!selectedProfId || profiles.length === 0) return;
 
 const now = Date.now();
 
-// Filter matches relevant to the currently selected profile and game mode
 let playerRelevantMatches = matchStatsHistory.filter(m => {
 const hasPlayer = m.players && m.players.some(p => p.id === selectedProfId);
 if (!hasPlayer) return false;
@@ -1490,7 +1518,6 @@ if (gameModeFilter !== 'all' && m.gameType !== gameModeFilter) return false;
 return true;
 });
 
-// Apply timeframe filter
 let filteredMatches = playerRelevantMatches.filter(m => {
 const mTime = m.timestamp || now;
 if (timeFilter === 'recent') {
@@ -1523,7 +1550,6 @@ let bestLegOverall = null;
 filteredMatches.forEach(m => {
 const playerStats = m.players.find(p => p.id === selectedProfId);
 if (playerStats) {
-// Matches played and match win rate count ONLY if the match was fully completed
 if (m.isMatchCompleted) {
 matchesPlayed++;
 if (playerStats.isWinner) matchesWon++;
@@ -1591,36 +1617,23 @@ renderPlayerPickers();
 let deferredPrompt = null;
 let isStandalone = false;
 
-// Check if app is running in standalone mode (installed)
 if (window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches) {
   isStandalone = true;
   document.body.classList.add('pwa-standalone');
-  console.log('Running as standalone PWA app');
 }
 
-// Handle the beforeinstallprompt event for Android
 window.addEventListener('beforeinstallprompt', (e) => {
-  console.log('beforeinstallprompt event triggered');
   e.preventDefault();
   deferredPrompt = e;
 });
 
-// Track if app was successfully installed
 window.addEventListener('appinstalled', () => {
-  console.log('App successfully installed');
   deferredPrompt = null;
   isStandalone = true;
 });
 
-// Detect display mode changes (user might exit standalone mode)
 window.matchMedia('(display-mode: standalone)').addEventListener('change', (e) => {
-  if (e.matches) {
-    console.log('App is in standalone mode');
-    isStandalone = true;
-  } else {
-    console.log('App exited standalone mode');
-    isStandalone = false;
-  }
+  isStandalone = e.matches;
 });
 
 // ==========================================
@@ -1630,22 +1643,15 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js', { scope: './' })
       .then((registration) => {
-        console.log('Service Worker registered successfully:', registration);
-        
-        // Listen for updates to the service worker
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
-              console.log('Service Worker updated - app will use new version on next reload');
+              console.log('Service Worker updated');
             }
           });
         });
-        
-        // Check for updates periodically
-        setInterval(() => {
-          registration.update();
-        }, 60000); // Check every minute
+        setInterval(() => { registration.update(); }, 60000);
       })
       .catch((error) => {
         console.warn('Service Worker registration failed:', error);
@@ -1653,16 +1659,10 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Lock to portrait orientation for app (optional - manifest already handles fullscreen)
 if ('orientation' in screen && screen.orientation) {
   screen.orientation.lock('portrait').catch((err) => {
     console.log('Could not lock orientation:', err);
   });
-}
-
-// Enable app installation on iOS
-if (window.navigator.standalone === false) {
-  console.log('App is installable on iOS');
 }
 </script>
 </body>
