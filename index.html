@@ -845,7 +845,6 @@ newFavs.push(Math.min(180, Math.max(0, val)));
 
 prof.favorites = newFavs;
 saveState();
-alert("Saved quick score favorites for " + prof.name + "!");
 }
 
 function promptDeleteProfile(id) {
@@ -896,13 +895,11 @@ return;
 const activeIds = selectedProfileIds.filter(id => id !== 'none');
 
 if (activeIds.length === 0) {
-alert("Please select at least one player to start a match!");
 return;
 }
 
 const uniqueProfiles = new Set(activeIds);
 if (uniqueProfiles.size < activeIds.length) {
-alert("Please select a different profile for each active slot!");
 return;
 }
 
@@ -1198,7 +1195,6 @@ triggerBustAlert("BUST! Remaining score unchanged.");
 } else {
 scoredPoints = parseInt(currentInputString) || 0;
 if (scoredPoints > 180) {
-alert("Maximum turn score in X01 is 180!");
 return;
 }
 
@@ -1286,7 +1282,6 @@ if (match.history.length > 20) match.history.shift();
 
 function undoLastTurn() {
 if (match.history.length === 0) {
-alert("No turns to undo in this leg!");
 return;
 }
 
@@ -1658,25 +1653,12 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Request fullscreen/orientation lock if running as app
-function requestAppPermissions() {
-  // Lock to portrait orientation for app
-  if ('orientation' in screen && screen.orientation) {
-    screen.orientation.lock('portrait-primary').catch((err) => {
-      console.log('Could not lock orientation:', err);
-    });
-  }
-  
-  // Request fullscreen if supported
-  if (document.documentElement.requestFullscreen && isStandalone) {
-    document.documentElement.requestFullscreen().catch((err) => {
-      console.log('Fullscreen request failed:', err);
-    });
-  }
+// Lock to portrait orientation for app (optional - manifest already handles fullscreen)
+if ('orientation' in screen && screen.orientation) {
+  screen.orientation.lock('portrait').catch((err) => {
+    console.log('Could not lock orientation:', err);
+  });
 }
-
-// Request permissions after user interaction
-document.addEventListener('click', requestAppPermissions, { once: true });
 
 // Enable app installation on iOS
 if (window.navigator.standalone === false) {
