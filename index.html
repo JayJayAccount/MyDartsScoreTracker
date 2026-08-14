@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
-<meta name="description" content="Progressive Web App for tracking darts scores offline">
+<meta name="description" content="Progressive Web App for tracking darts scores offline with AI Dartbots">
 <meta name="theme-color" content="#b45309">
 <meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -17,7 +17,7 @@
 <meta name="format-detection" content="telephone=no">
 <link rel="apple-touch-icon" href="dartboard.svg">
 <link rel="shortcut icon" href="dartboard.svg" type="image/svg+xml">
-<title>My Darts App - Android Scoring App</title>
+<title>My Darts App - Android Scoring App with Dartbots</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="dartboard.svg">
 <script src="https://cdn.tailwindcss.com"></script>
@@ -38,6 +38,18 @@ width: 4px;
 .custom-scrollbar::-webkit-scrollbar-thumb {
 background: #4B5563;
 border-radius: 4px;
+}
+.bot-highlight {
+transition: background-color 0.2s ease, transform 0.15s ease;
+background-color: #d97706 !important; /* amber-600 */
+color: #ffffff !important;
+transform: scale(0.96);
+}
+.bot-submit-highlight {
+transition: background-color 0.2s ease, transform 0.15s ease;
+background-color: #059669 !important; /* emerald-600 */
+color: #ffffff !important;
+transform: scale(0.96);
 }
 </style>
 </head>
@@ -70,8 +82,8 @@ border-radius: 4px;
 
 <!-- ================= 1. MAIN MENU SCREEN ================= -->
 <section id="screen-menu" class="absolute inset-0 p-4 flex flex-col justify-between bg-slate-900 z-10 overflow-y-auto">
-<div class="text-center py-1">
-<h1 class="text-4xl font-black text-amber-500 tracking-wider">MY DARTS APP</h1>
+<div class="text-center py-0.5">
+<h1 class="text-2xl font-black text-amber-500 tracking-wider">MY DARTS APP</h1>
 <p class="text-xs text-slate-400">Score and Stats Tracker</p>
 </div>
 
@@ -139,6 +151,9 @@ START MATCH
 
 <!-- ================= 2. X01 GAMEPLAY SCREEN ================= -->
 <section id="screen-x01" class="absolute inset-0 p-2 flex flex-col justify-between hidden bg-slate-900 overflow-y-auto custom-scrollbar">
+<!-- Overlay Locker for Bot Turn / Anti-Cheat Lock during Bot Score Undo -->
+<div id="bot-overlay-locker" class="hidden absolute inset-0 bg-transparent z-40"></div>
+
 <!-- Compact Upper Area -->
 <div class="flex-shrink-0 space-y-1">
 <!-- Match Status Banner -->
@@ -148,8 +163,9 @@ START MATCH
 <span>Sets: <b id="x01-sets-display">0-0</b></span> |
 <span>Legs: <b id="x01-legs-display">0-0</b></span>
 </div>
-<div class="text-slate-400">
-Round <span id="x01-round-display" class="font-bold text-white">1</span>
+<div class="text-slate-400 flex items-center space-x-1">
+<span id="bot-thinking-indicator" class="hidden text-amber-400 font-bold text-[10px] animate-pulse"><i class="fa-solid fa-robot mr-1"></i>Bot Turn...</span>
+<span>Round <span id="x01-round-display" class="font-bold text-white">1</span></span>
 </div>
 </div>
 
@@ -176,8 +192,14 @@ Round <span id="x01-round-display" class="font-bold text-white">1</span>
 <span id="bust-alert-text">BUST! Turn scored 0.</span>
 </div>
 
+<!-- ANTI-CHEAT UNDO LOCK BANNER -->
+<div id="x01-undo-lock-banner" class="hidden bg-amber-600/90 text-white text-xs font-bold py-1 px-2 rounded-lg text-center border border-amber-400 flex items-center justify-center space-x-1.5 flex-shrink-0 animate-pulse">
+<i class="fa-solid fa-lock"></i>
+<span>Bot turn active on scorecard. Tap UNDO again to reach your turn.</span>
+</div>
+
 <!-- Comfortably Sized Keypads Area -->
-<div class="flex-shrink-0 pb-1">
+<div class="flex-shrink-0 pb-1 relative">
 
 <!-- MODE A: TOTAL SCORE INPUT KEYPAD (Score > 170) -->
 <div id="x01-keypad-total" class="space-y-1.5">
@@ -190,22 +212,22 @@ Round <span id="x01-round-display" class="font-bold text-white">1</span>
 
 <!-- Main Numpad with standard comfortable button dimensions -->
 <div class="grid grid-cols-3 gap-1.5 text-2xl font-black">
-<button onclick="playAudio('click'); appendNum(1)" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">1</button>
-<button onclick="playAudio('click'); appendNum(2)" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">2</button>
-<button onclick="playAudio('click'); appendNum(3)" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">3</button>
-<button onclick="playAudio('click'); appendNum(4)" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">4</button>
-<button onclick="playAudio('click'); appendNum(5)" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">5</button>
-<button onclick="playAudio('click'); appendNum(6)" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">6</button>
-<button onclick="playAudio('click'); appendNum(7)" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">7</button>
-<button onclick="playAudio('click'); appendNum(8)" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">8</button>
-<button onclick="playAudio('click'); appendNum(9)" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">9</button>
-<button onclick="playAudio('clear'); clearInput()" class="bg-rose-900/80 hover:bg-rose-800 active:bg-rose-700 text-rose-200 py-2 rounded-xl border border-rose-700 text-base font-black shadow-md">CLR</button>
-<button onclick="playAudio('click'); appendNum(0)" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">0</button>
-<button onclick="playAudio('undo'); undoLastTurn()" class="bg-amber-800 hover:bg-amber-700 active:bg-amber-600 text-amber-100 py-2 rounded-xl border border-amber-600 text-sm font-black flex items-center justify-center space-x-1 shadow-md">
+<button id="btn-num-1" onclick="handleInputClick(() => appendNum(1))" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">1</button>
+<button id="btn-num-2" onclick="handleInputClick(() => appendNum(2))" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">2</button>
+<button id="btn-num-3" onclick="handleInputClick(() => appendNum(3))" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">3</button>
+<button id="btn-num-4" onclick="handleInputClick(() => appendNum(4))" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">4</button>
+<button id="btn-num-5" onclick="handleInputClick(() => appendNum(5))" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">5</button>
+<button id="btn-num-6" onclick="handleInputClick(() => appendNum(6))" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">6</button>
+<button id="btn-num-7" onclick="handleInputClick(() => appendNum(7))" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">7</button>
+<button id="btn-num-8" onclick="handleInputClick(() => appendNum(8))" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">8</button>
+<button id="btn-num-9" onclick="handleInputClick(() => appendNum(9))" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">9</button>
+<button id="btn-num-clr" onclick="handleInputClick(() => clearInput(), 'clear')" class="bg-rose-900/80 hover:bg-rose-800 active:bg-rose-700 text-rose-200 py-2 rounded-xl border border-rose-700 text-base font-black shadow-md">CLR</button>
+<button id="btn-num-0" onclick="handleInputClick(() => appendNum(0))" class="bg-slate-700 hover:bg-slate-600 active:bg-amber-600 py-2 rounded-xl border border-slate-600 shadow-md">0</button>
+<button id="btn-num-undo" onclick="playAudio('undo'); undoLastTurn()" class="bg-amber-800 hover:bg-amber-700 active:bg-amber-600 text-amber-100 py-2 rounded-xl border border-amber-600 text-sm font-black flex items-center justify-center space-x-1 shadow-md z-50">
 <i class="fa-solid fa-rotate-left"></i><span>UNDO</span>
 </button>
 </div>
-<button onclick="playAudio('submit'); confirmScoreX01()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 font-black text-xl text-white rounded-xl shadow-lg border border-emerald-400 active:scale-95 transition mt-1">
+<button id="btn-num-submit" onclick="handleInputClick(() => confirmScoreX01(), 'submit')" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 font-black text-xl text-white rounded-xl shadow-lg border border-emerald-400 active:scale-95 transition mt-1">
 CONFIRM SCORE
 </button>
 </div>
@@ -221,42 +243,42 @@ CONFIRM SCORE
 
 <!-- Dart Modifier Buttons -->
 <div class="grid grid-cols-3 gap-1 text-xs font-black">
-<button onclick="playAudio('click'); setDartMultiplier(1)" id="mod-single" class="bg-amber-600 py-2.5 rounded-lg border border-amber-400 shadow">SINGLE</button>
-<button onclick="playAudio('click'); setDartMultiplier(2)" id="mod-double" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow">DOUBLE</button>
-<button onclick="playAudio('click'); setDartMultiplier(3)" id="mod-triple" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow">TRIPLE</button>
+<button onclick="handleInputClick(() => setDartMultiplier(1))" id="mod-single" class="bg-amber-600 py-2.5 rounded-lg border border-amber-400 shadow">SINGLE</button>
+<button onclick="handleInputClick(() => setDartMultiplier(2))" id="mod-double" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow">DOUBLE</button>
+<button onclick="handleInputClick(() => setDartMultiplier(3))" id="mod-triple" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow">TRIPLE</button>
 </div>
 
-<!-- Number grid for per-dart with enlarged text (text-xl) keeping identical box height (py-2.5) -->
+<!-- Number grid for per-dart -->
 <div class="grid grid-cols-7 gap-1 text-xl font-black">
-<button onclick="playAudio('click'); inputPerDart(1)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">1</button>
-<button onclick="playAudio('click'); inputPerDart(2)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">2</button>
-<button onclick="playAudio('click'); inputPerDart(3)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">3</button>
-<button onclick="playAudio('click'); inputPerDart(4)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">4</button>
-<button onclick="playAudio('click'); inputPerDart(5)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">5</button>
-<button onclick="playAudio('click'); inputPerDart(6)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">6</button>
-<button onclick="playAudio('click'); inputPerDart(7)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">7</button>
-<button onclick="playAudio('click'); inputPerDart(8)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">8</button>
-<button onclick="playAudio('click'); inputPerDart(9)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">9</button>
-<button onclick="playAudio('click'); inputPerDart(10)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">10</button>
-<button onclick="playAudio('click'); inputPerDart(11)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">11</button>
-<button onclick="playAudio('click'); inputPerDart(12)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">12</button>
-<button onclick="playAudio('click'); inputPerDart(13)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">13</button>
-<button onclick="playAudio('click'); inputPerDart(14)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">14</button>
-<button onclick="playAudio('click'); inputPerDart(15)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">15</button>
-<button onclick="playAudio('click'); inputPerDart(16)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">16</button>
-<button onclick="playAudio('click'); inputPerDart(17)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">17</button>
-<button onclick="playAudio('click'); inputPerDart(18)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">18</button>
-<button onclick="playAudio('click'); inputPerDart(19)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">19</button>
-<button onclick="playAudio('click'); inputPerDart(20)" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">20</button>
-<button onclick="playAudio('click'); inputPerDart(25)" class="bg-red-700 py-2.5 rounded-lg border border-red-500 text-sm font-black shadow flex items-center justify-center">BULL</button>
+<button id="btn-pd-1" onclick="handleInputClick(() => inputPerDart(1))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">1</button>
+<button id="btn-pd-2" onclick="handleInputClick(() => inputPerDart(2))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">2</button>
+<button id="btn-pd-3" onclick="handleInputClick(() => inputPerDart(3))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">3</button>
+<button id="btn-pd-4" onclick="handleInputClick(() => inputPerDart(4))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">4</button>
+<button id="btn-pd-5" onclick="handleInputClick(() => inputPerDart(5))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">5</button>
+<button id="btn-pd-6" onclick="handleInputClick(() => inputPerDart(6))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">6</button>
+<button id="btn-pd-7" onclick="handleInputClick(() => inputPerDart(7))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">7</button>
+<button id="btn-pd-8" onclick="handleInputClick(() => inputPerDart(8))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">8</button>
+<button id="btn-pd-9" onclick="handleInputClick(() => inputPerDart(9))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">9</button>
+<button id="btn-pd-10" onclick="handleInputClick(() => inputPerDart(10))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">10</button>
+<button id="btn-pd-11" onclick="handleInputClick(() => inputPerDart(11))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">11</button>
+<button id="btn-pd-12" onclick="handleInputClick(() => inputPerDart(12))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">12</button>
+<button id="btn-pd-13" onclick="handleInputClick(() => inputPerDart(13))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">13</button>
+<button id="btn-pd-14" onclick="handleInputClick(() => inputPerDart(14))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">14</button>
+<button id="btn-pd-15" onclick="handleInputClick(() => inputPerDart(15))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">15</button>
+<button id="btn-pd-16" onclick="handleInputClick(() => inputPerDart(16))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">16</button>
+<button id="btn-pd-17" onclick="handleInputClick(() => inputPerDart(17))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">17</button>
+<button id="btn-pd-18" onclick="handleInputClick(() => inputPerDart(18))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">18</button>
+<button id="btn-pd-19" onclick="handleInputClick(() => inputPerDart(19))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">19</button>
+<button id="btn-pd-20" onclick="handleInputClick(() => inputPerDart(20))" class="bg-slate-700 py-2.5 rounded-lg border border-slate-600 shadow flex items-center justify-center">20</button>
+<button id="btn-pd-25" onclick="handleInputClick(() => inputPerDart(25))" class="bg-red-700 py-2.5 rounded-lg border border-red-500 text-sm font-black shadow flex items-center justify-center">BULL</button>
 </div>
 
-<!-- Action controls for Per-Dart (MISS, CLR, UNDO, SUBMIT) made taller (py-3.5) and larger (text-sm/font-black) -->
+<!-- Action controls for Per-Dart (MISS, CLR, UNDO, SUBMIT) -->
 <div class="grid grid-cols-4 gap-1 pt-0.5">
-<button onclick="playAudio('click'); inputPerDart(0)" class="bg-slate-800 text-slate-300 py-3.5 rounded-lg font-black text-sm border border-slate-700 shadow active:scale-95 transition">MISS (0)</button>
-<button onclick="playAudio('clear'); clearPerDart()" class="bg-rose-900/80 hover:bg-rose-800 text-rose-200 py-3.5 rounded-lg font-black text-sm border border-rose-700 shadow active:scale-95 transition">CLR</button>
-<button onclick="playAudio('undo'); undoLastTurn()" class="bg-amber-800 hover:bg-amber-700 text-white py-3.5 rounded-lg font-black text-sm border border-amber-600 shadow active:scale-95 transition">UNDO</button>
-<button onclick="playAudio('submit'); confirmScoreX01()" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3.5 rounded-lg font-black text-sm border border-emerald-400 shadow active:scale-95 transition">SUBMIT</button>
+<button id="btn-pd-miss" onclick="handleInputClick(() => inputPerDart(0))" class="bg-slate-800 text-slate-300 py-3.5 rounded-lg font-black text-sm border border-slate-700 shadow active:scale-95 transition">MISS (0)</button>
+<button id="btn-pd-clr" onclick="handleInputClick(() => clearPerDart(), 'clear')" class="bg-rose-900/80 hover:bg-rose-800 text-rose-200 py-3.5 rounded-lg font-black text-sm border border-rose-700 shadow active:scale-95 transition">CLR</button>
+<button id="btn-pd-undo" onclick="playAudio('undo'); undoLastTurn()" class="bg-amber-800 hover:bg-amber-700 text-white py-3.5 rounded-lg font-black text-sm border border-amber-600 shadow active:scale-95 transition z-50">UNDO</button>
+<button id="btn-pd-submit" onclick="handleInputClick(() => confirmScoreX01(), 'submit')" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3.5 rounded-lg font-black text-sm border border-emerald-400 shadow active:scale-95 transition">SUBMIT</button>
 </div>
 </div>
 
@@ -269,7 +291,7 @@ CONFIRM SCORE
 <div class="flex justify-between items-center">
 <h2 class="text-2xl font-black text-amber-500">Player Profiles</h2>
 <button onclick="playAudio('click'); openNewProfileModal()" class="px-3 py-1.5 bg-emerald-600 text-xs rounded-lg font-bold hover:bg-emerald-500 border border-emerald-400">
-• New Profile
++ New Profile
 </button>
 </div>
 
@@ -286,7 +308,7 @@ CONFIRM SCORE
 <div class="grid grid-cols-3 gap-2" id="favorites-edit-grid">
 <!-- Dynamically Populated 9 Inputs -->
 </div>
-<button onclick="playAudio('submit'); saveProfileFavorites()" class="w-full py-2 bg-amber-600 text-xs font-bold rounded-lg hover:bg-amber-500 border border-amber-400">
+<button id="btn-save-favorites" onclick="playAudio('submit'); saveProfileFavorites()" class="w-full py-2 bg-amber-600 text-xs font-bold rounded-lg hover:bg-amber-500 border border-amber-400">
 Save Favorites
 </button>
 </div>
@@ -421,6 +443,20 @@ Continue
 </div>
 </div>
 
+<!-- DARTBOT ERROR MODAL -->
+<div id="dartbot-rule-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+<div class="bg-slate-800 border border-amber-500 rounded-2xl p-4 max-w-xs w-full text-center space-y-3 shadow-2xl">
+<i class="fa-solid fa-robot text-4xl text-amber-400"></i>
+<div>
+<h3 class="text-lg font-bold text-white">Invalid Dartbot Match</h3>
+<p class="text-xs text-amber-200 mt-1 leading-relaxed">Dartbots can only be used in 501 games against 1 opponent</p>
+</div>
+<button onclick="playAudio('click'); closeDartbotRuleModal()" class="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-lg text-xs border border-amber-400 mt-2">
+OK, Got It
+</button>
+</div>
+</div>
+
 <!-- HOME EXIT CONFIRMATION MODAL -->
 <div id="exit-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
 <div class="bg-slate-800 border border-rose-500 rounded-2xl p-4 max-w-xs w-full text-center space-y-3 shadow-2xl">
@@ -523,32 +559,90 @@ osc.stop(now + 0.12);
 }
 
 // ==========================================
+// DARTBOT DEFINITIONS & CONSTANTS
+// ==========================================
+const DARTBOT_PROFILES = [
+  { id: 'bot_lvl1', name: 'Lvl 1 501 Dartbot', targetAvg: 35, isBot: true },
+  { id: 'bot_lvl2', name: 'Lvl 2 501 Dartbot', targetAvg: 40, isBot: true },
+  { id: 'bot_lvl3', name: 'Lvl 3 501 Dartbot', targetAvg: 45, isBot: true },
+  { id: 'bot_lvl4', name: 'Lvl 4 501 Dartbot', targetAvg: 50, isBot: true },
+  { id: 'bot_lvl5', name: 'Lvl 5 501 Dartbot', targetAvg: 55, isBot: true },
+  { id: 'bot_lvl6', name: 'Lvl 6 501 Dartbot', targetAvg: 60, isBot: true },
+  { id: 'bot_lvl7', name: 'Lvl 7 501 Dartbot', targetAvg: 65, isBot: true },
+  { id: 'bot_lvl8', name: 'Lvl 8 501 Dartbot', targetAvg: 70, isBot: true },
+  { id: 'bot_lvl9', name: 'Lvl 9 501 Dartbot', targetAvg: 75, isBot: true },
+  { id: 'bot_lvl10', name: 'Lvl 10 501 Dartbot', targetAvg: 80, isBot: true }
+];
+
+function isBotProfile(id) {
+  return typeof id === 'string' && id.startsWith('bot_');
+}
+
+// ==========================================
 // DATA STRUCTURES & LOCAL STORAGE PERSISTENCE
 // ==========================================
 let profiles = JSON.parse(localStorage.getItem('darts_profiles')) || [];
 let matchStatsHistory = JSON.parse(localStorage.getItem('darts_stats_history')) || [];
 
 function saveState() {
-localStorage.setItem('darts_profiles', JSON.stringify(profiles));
-localStorage.setItem('darts_stats_history', JSON.stringify(matchStatsHistory));
+  localStorage.setItem('darts_profiles', JSON.stringify(profiles));
+  localStorage.setItem('darts_stats_history', JSON.stringify(matchStatsHistory));
 }
 
-// Default initial profile creation if empty
-if (profiles.length === 0) {
-profiles.push({
-id: 'prof_' + Date.now(),
-name: 'Player 1',
-favorites: [26, 41, 45, 60, 85, 100, 120, 140, 180]
+// Ensure Dartbot profiles are present in local storage profiles array
+DARTBOT_PROFILES.forEach(bot => {
+  if (!profiles.some(p => p.id === bot.id)) {
+    profiles.push({
+      id: bot.id,
+      name: bot.name,
+      isBot: true,
+      targetAvg: bot.targetAvg,
+      favorites: [26, 41, 45, 60, 85, 100, 120, 140, 180]
+    });
+  }
 });
-saveState();
+
+// Default initial profile creation if no human profile exists
+if (!profiles.some(p => !p.isBot)) {
+  profiles.unshift({
+    id: 'prof_' + Date.now(),
+    name: 'Player 1',
+    favorites: [26, 41, 45, 60, 85, 100, 120, 140, 180]
+  });
 }
+saveState();
+
+// Helper to get profiles sorted: Humans top, Bots bottom
+function getSortedProfiles() {
+  const humans = profiles.filter(p => !p.isBot);
+  const bots = profiles.filter(p => p.isBot);
+  return [...humans, ...bots];
+}
+
+// Helper: Normal distribution random variable (Box-Muller transform)
+function randomNormal(mean = 0, stdev = 1) {
+  let u1 = 0, u2 = 0;
+  while (u1 === 0) u1 = Math.random();
+  while (u2 === 0) u2 = Math.random();
+  const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+  return z * stdev + mean;
+}
+
+// Valid single-dart checkout / setup finish targets (out of 170)
+const IMPOSSIBLE_3DART_SCORES = new Set([163, 166, 169, 172, 173, 175, 176, 178, 179]);
+
+// Typical realistic darts score buckets for high-variance sampling
+const TYPICAL_DARTS_SCORES = [
+  0, 7, 11, 15, 19, 22, 26, 30, 32, 35, 41, 43, 45, 57, 60, 66, 77, 81, 85, 95, 100, 120, 133, 140, 180
+];
 
 // ==========================================
 // APP STATE MANAGEMENT
 // ==========================================
 let currentGameType = '501';
-let selectedProfileIds = [profiles[0]?.id || 'none', 'none', 'none', 'none'];
-let activeEditingProfileId = profiles[0]?.id || null;
+const initialHuman = profiles.find(p => !p.isBot);
+let selectedProfileIds = [initialHuman ? initialHuman.id : 'none', 'none', 'none', 'none'];
+let activeEditingProfileId = initialHuman ? initialHuman.id : profiles[0]?.id;
 let pendingWinningPlayer = null;
 let isMatchOver = false;
 let pendingTargetScreen = 'screen-menu';
@@ -564,6 +658,7 @@ startingPlayerIdx: 0,
 activePlayerIdx: 0,
 round: 1,
 history: [],
+turnCache: {}, // Stores generated bot turns so Undo reproduces identical scores
 isFinished: false,
 players: []
 };
@@ -571,6 +666,7 @@ players: []
 let currentInputString = "0";
 let perDartMultiplier = 1;
 let perDartThrows = [];
+let isBotAnimating = false;
 
 // Helper function: Checkout attempt valid only for scores <= 50 that have a direct double finish
 function isCheckoutAvailable(score) {
@@ -579,13 +675,36 @@ if (score >= 2 && score <= 40 && score % 2 === 0) return true;
 return false;
 }
 
+// Handler for user keypad presses with Anti-Cheat protection during Bot Undo
+function handleInputClick(actionFn, soundType = 'click') {
+  const activeP = match.players[match.activePlayerIdx];
+  if (isBotAnimating) return;
+
+  if (activeP && activeP.isBot) {
+    // Input is locked because active player on board is a Bot (during Undo review)
+    triggerUndoLockBanner();
+    return;
+  }
+
+  if (soundType) playAudio(soundType);
+  actionFn();
+}
+
+function triggerUndoLockBanner() {
+  const banner = document.getElementById('x01-undo-lock-banner');
+  banner.classList.remove('hidden');
+  setTimeout(() => {
+    banner.classList.add('hidden');
+  }, 2500);
+}
+
 // ==========================================
-// UI SCREEN NAVIGATION & EXIT GUARD (BACK BUTTON SUPPORT)
+// UI SCREEN NAVIGATION & EXIT GUARD
 // ==========================================
 let isNavigatingProgrammatically = false;
 
 // Initialize history entry on startup
-if (history.state === null) {
+if (!history.state || !history.state.screen) {
 history.replaceState({ screen: 'screen-menu' }, '');
 }
 
@@ -594,7 +713,21 @@ const currentScreen = getCurrentScreenId();
 
 if (pushHistory && currentScreen !== screenId) {
 isNavigatingProgrammatically = true;
+
+if (screenId === 'screen-menu') {
+// Re-anchor history state at main screen
+history.replaceState({ screen: 'screen-menu' }, '');
+} else {
+const isSubScreen = (currentScreen === 'screen-profiles' || currentScreen === 'screen-stats');
+const isNewSubScreen = (screenId === 'screen-profiles' || screenId === 'screen-stats');
+
+// Replaces state when switching between sub-screens so Back button always leads back to Main Menu
+if (isSubScreen && isNewSubScreen) {
+history.replaceState({ screen: screenId }, '');
+} else {
 history.pushState({ screen: screenId }, '');
+}
+}
 isNavigatingProgrammatically = false;
 }
 
@@ -616,27 +749,48 @@ if (!document.getElementById(id).classList.contains('hidden')) return id;
 return 'screen-menu';
 }
 
-// Intercept Back Navigation Button Press (Browser/Android Back)
+// Intercept Back Navigation Button Press
 window.addEventListener('popstate', function (e) {
 if (isNavigatingProgrammatically) return;
 
+const exitModal = document.getElementById('exit-modal');
+const newProfileModal = document.getElementById('new-profile-modal');
+const deleteProfileModal = document.getElementById('delete-profile-modal');
+const dartbotRuleModal = document.getElementById('dartbot-rule-modal');
+
+if (exitModal && !exitModal.classList.contains('hidden')) {
+closeExitModal();
+return;
+}
+if (newProfileModal && !newProfileModal.classList.contains('hidden')) {
+closeNewProfileModal();
+return;
+}
+if (deleteProfileModal && !deleteProfileModal.classList.contains('hidden')) {
+closeDeleteProfileModal();
+return;
+}
+if (dartbotRuleModal && !dartbotRuleModal.classList.contains('hidden')) {
+closeDartbotRuleModal();
+return;
+}
+
 const currentScreen = getCurrentScreenId();
-const exitModalOpen = !document.getElementById('exit-modal').classList.contains('hidden');
 
 if (currentScreen === 'screen-x01' && !match.isFinished) {
-// Push state back so history position remains on game screen while prompt is active
 history.pushState({ screen: 'screen-x01' }, '');
-pendingTargetScreen = e.state?.screen || 'screen-menu';
+pendingTargetScreen = 'screen-menu';
 document.getElementById('exit-modal').classList.remove('hidden');
-} else if (exitModalOpen) {
-closeExitModal();
-} else {
-const targetScreen = e.state?.screen || 'screen-menu';
-showScreen(targetScreen, false);
+return;
+}
+
+if (currentScreen === 'screen-profiles' || currentScreen === 'screen-stats' || currentScreen === 'screen-x01') {
+showScreen('screen-menu', false);
+history.replaceState({ screen: 'screen-menu' }, '');
+return;
 }
 });
 
-// Guard browser/tab reload or exit during active match
 window.addEventListener('beforeunload', function (e) {
 const x01Screen = document.getElementById('screen-x01');
 if (x01Screen && !x01Screen.classList.contains('hidden') && !match.isFinished) {
@@ -646,6 +800,7 @@ e.returnValue = '';
 });
 
 function confirmHomeExit() {
+if (isBotAnimating) return;
 const x01Screen = document.getElementById('screen-x01');
 if (!x01Screen.classList.contains('hidden') && !match.isFinished) {
 pendingTargetScreen = 'screen-menu';
@@ -656,6 +811,7 @@ showScreen('screen-menu');
 }
 
 function confirmHomeExitWithScreen(targetScreen) {
+if (isBotAnimating) return;
 const x01Screen = document.getElementById('screen-x01');
 if (!x01Screen.classList.contains('hidden') && !match.isFinished) {
 pendingTargetScreen = targetScreen;
@@ -669,9 +825,12 @@ function closeExitModal() {
 document.getElementById('exit-modal').classList.add('hidden');
 }
 
+function closeDartbotRuleModal() {
+document.getElementById('dartbot-rule-modal').classList.add('hidden');
+}
+
 function executeHomeExit() {
 document.getElementById('exit-modal').classList.add('hidden');
-// If exiting early without finishing match, save completed leg statistics without declaring match completion
 recordMatchStats(null, true, false);
 match.isFinished = true;
 showScreen(pendingTargetScreen);
@@ -701,7 +860,9 @@ function renderPlayerPickers() {
 const container = document.getElementById('player-pickers-container');
 container.innerHTML = '';
 
-if (profiles.length === 0) {
+const sorted = getSortedProfiles();
+
+if (sorted.length === 0) {
 container.innerHTML = '<div class="text-center py-2 bg-slate-900 rounded-lg border border-dashed border-slate-700"><p class="text-xs text-amber-400 mb-1 font-bold">No Player Profiles Created</p><p class="text-[10px] text-slate-400 mb-2">Create unique profiles to begin tracking statistics.</p><button onclick="playAudio(\'click\'); openNewProfileModal()" class="px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-lg">+ Create First Profile</button></div>';
 return;
 }
@@ -713,7 +874,21 @@ div.className = "flex items-center space-x-2 text-xs";
 const currentVal = selectedProfileIds[i] || 'none';
 
 let options = '<option value="none"' + (currentVal === 'none' ? ' selected' : '') + '>-- None / Empty --</option>';
-options += profiles.map(p => '<option value="' + p.id + '"' + (p.id === currentVal ? ' selected' : '') + '>' + p.name + '</option>').join('');
+
+const humans = sorted.filter(p => !p.isBot);
+const bots = sorted.filter(p => p.isBot);
+
+if (humans.length > 0) {
+options += '<optgroup label="Real Players">';
+options += humans.map(p => '<option value="' + p.id + '"' + (p.id === currentVal ? ' selected' : '') + '>' + p.name + '</option>').join('');
+options += '</optgroup>';
+}
+
+if (bots.length > 0) {
+options += '<optgroup label="Dartbots (501 Only)">';
+options += bots.map(p => '<option value="' + p.id + '"' + (p.id === currentVal ? ' selected' : '') + '>' + p.name + '</option>').join('');
+options += '</optgroup>';
+}
 
 div.innerHTML = '<span class="text-slate-400 w-16 font-bold">Slot ' + (i + 1) + ':</span>' +
 '<select onchange="playAudio(\'click\'); updateSelectedProfile(' + i + ', this.value)" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-2 font-bold text-white">' +
@@ -777,24 +952,33 @@ function renderProfilesScreen() {
 const listContainer = document.getElementById('profiles-list-container');
 listContainer.innerHTML = '';
 
-if (profiles.length === 0) {
+const sorted = getSortedProfiles();
+
+if (sorted.length === 0) {
 listContainer.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">No profiles available.</p>';
 return;
 }
 
-profiles.forEach(p => {
+sorted.forEach(p => {
 const isSelected = p.id === activeEditingProfileId;
 const div = document.createElement('div');
 div.className = "p-2 rounded-xl border flex items-center justify-between " + (isSelected ? 'bg-amber-950/40 border-amber-500' : 'bg-slate-800 border-slate-700');
 
+const botBadge = p.isBot ? '<span class="ml-1 px-1.5 py-0.5 text-[9px] bg-amber-600 text-white rounded font-bold"><i class="fa-solid fa-robot mr-1"></i>BOT</span>' : '';
+
+let actionButtons = '';
+if (p.isBot) {
+actionButtons = '<span class="text-[10px] text-slate-500 italic pr-2">Protected System Profile</span>';
+} else {
+actionButtons = '<button onclick="playAudio(\'click\'); selectProfileForEditing(\'' + p.id + '\')" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-xs font-bold rounded text-amber-300">Edit Favs</button>' +
+'<button onclick="playAudio(\'click\'); promptDeleteProfile(\'' + p.id + '\')" class="px-2 py-1 bg-rose-900/60 hover:bg-rose-800 text-xs font-bold rounded text-rose-300"><i class="fa-solid fa-trash"></i></button>';
+}
+
 div.innerHTML = '<div class="flex items-center space-x-2 cursor-pointer flex-1" onclick="playAudio(\'click\'); selectProfileForEditing(\'' + p.id + '\')">' +
-'<i class="fa-solid fa-circle-user text-amber-500 text-base"></i>' +
-'<span class="font-bold text-sm text-white">' + p.name + '</span>' +
+'<i class="fa-solid ' + (p.isBot ? 'fa-robot text-amber-400' : 'fa-circle-user text-amber-500') + ' text-base"></i>' +
+'<span class="font-bold text-sm text-white">' + p.name + '</span>' + botBadge +
 '</div>' +
-'<div class="flex items-center space-x-1.5">' +
-'<button onclick="playAudio(\'click\'); selectProfileForEditing(\'' + p.id + '\')" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-xs font-bold rounded text-amber-300">Edit Favs</button>' +
-'<button onclick="playAudio(\'click\'); promptDeleteProfile(\'' + p.id + '\')" class="px-2 py-1 bg-rose-900/60 hover:bg-rose-800 text-xs font-bold rounded text-rose-300"><i class="fa-solid fa-trash"></i></button>' +
-'</div>';
+'<div class="flex items-center space-x-1.5">' + actionButtons + '</div>';
 listContainer.appendChild(div);
 });
 
@@ -810,6 +994,7 @@ function renderFavoritesEditGrid() {
 const prof = profiles.find(p => p.id === activeEditingProfileId);
 const titleEl = document.getElementById('favorites-profile-title');
 const gridEl = document.getElementById('favorites-edit-grid');
+const saveBtn = document.getElementById('btn-save-favorites');
 
 if (!prof) {
 titleEl.innerText = "Programmable Quick Scores";
@@ -817,6 +1002,14 @@ gridEl.innerHTML = '<p class="text-xs text-slate-400 col-span-3 text-center">Sel
 return;
 }
 
+if (prof.isBot) {
+titleEl.innerText = "Programmable Quick Scores (" + prof.name + ")";
+gridEl.innerHTML = '<p class="text-xs text-amber-400/80 col-span-3 text-center font-semibold py-2"><i class="fa-solid fa-robot mr-1"></i>Dartbot profiles use automated 501 keypad logic. Favorites cannot be changed.</p>';
+if (saveBtn) saveBtn.classList.add('hidden');
+return;
+}
+
+if (saveBtn) saveBtn.classList.remove('hidden');
 titleEl.innerText = "Programmable Quick Scores (" + prof.name + ")";
 gridEl.innerHTML = '';
 
@@ -835,7 +1028,7 @@ gridEl.appendChild(input);
 
 function saveProfileFavorites() {
 const prof = profiles.find(p => p.id === activeEditingProfileId);
-if (!prof) return;
+if (!prof || prof.isBot) return;
 
 const newFavs = [];
 for (let i = 0; i < 9; i++) {
@@ -849,7 +1042,7 @@ saveState();
 
 function promptDeleteProfile(id) {
 const prof = profiles.find(p => p.id === id);
-if (!prof) return;
+if (!prof || prof.isBot) return;
 
 pendingDeleteProfileId = id;
 document.getElementById('delete-profile-name').innerText = prof.name;
@@ -864,7 +1057,6 @@ pendingDeleteProfileId = null;
 function executeDeleteProfile() {
 if (!pendingDeleteProfileId) return;
 
-// Remove deleted profile's statistics from match history
 matchStatsHistory.forEach(m => {
 m.players = m.players.filter(p => p.id !== pendingDeleteProfileId);
 });
@@ -884,7 +1076,7 @@ renderProfilesScreen();
 }
 
 // ==========================================
-// START MATCH
+// START MATCH & DARTBOT VALIDATION
 // ==========================================
 function startMatch() {
 if (profiles.length === 0) {
@@ -901,6 +1093,16 @@ return;
 const uniqueProfiles = new Set(activeIds);
 if (uniqueProfiles.size < activeIds.length) {
 return;
+}
+
+const botCount = activeIds.filter(id => isBotProfile(id)).length;
+const humanCount = activeIds.filter(id => !isBotProfile(id)).length;
+
+if (botCount > 0) {
+  if (currentGameType !== '501' || botCount !== 1 || humanCount !== 1) {
+    document.getElementById('dartbot-rule-modal').classList.remove('hidden');
+    return;
+  }
 }
 
 const legsBestOf = parseInt(document.getElementById('select-legs').value);
@@ -920,12 +1122,15 @@ startingPlayerIdx: 0,
 activePlayerIdx: 0,
 round: 1,
 history: [],
+turnCache: {},
 isFinished: false,
 players: activeIds.map(id => {
 const prof = profiles.find(p => p.id === id);
-return{
+return {
 id: id,
 name: prof ? prof.name : 'Player',
+isBot: prof ? !!prof.isBot : false,
+targetAvg: prof ? prof.targetAvg || 50 : 50,
 score: parseInt(currentGameType),
 startingScore: parseInt(currentGameType) || 0,
 setsWon: 0,
@@ -951,6 +1156,8 @@ wonLegsDartsHistory: []
 
 setupX01Screen();
 showScreen('screen-x01');
+
+checkAndRunBotTurn();
 }
 
 // ==========================================
@@ -961,6 +1168,7 @@ document.getElementById('x01-game-title').innerText = match.type;
 currentInputString = "0";
 perDartThrows = [];
 document.getElementById('x01-bust-alert').classList.add('hidden');
+document.getElementById('x01-undo-lock-banner').classList.add('hidden');
 renderX01UI();
 }
 
@@ -988,11 +1196,13 @@ if (p.legDartsThrown > 0) {
 avg = ((p.legPointsScored / p.legDartsThrown) * 3).toFixed(1);
 }
 
+const botTag = p.isBot ? '<span class="text-[9px] text-amber-400 font-bold ml-1"><i class="fa-solid fa-robot"></i></span>' : '';
+
 div.className = "p-1.5 rounded-xl border flex flex-col justify-between transition-all relative overflow-hidden " +
 (isActive ? 'bg-amber-950/60 border-amber-400 shadow-md ring-1 ring-amber-400/50' : 'bg-slate-800/80 border-slate-700/80 opacity-85');
 
 div.innerHTML = '<div class="flex justify-between items-center mb-0.5">' +
-'<span class="font-bold text-xs truncate max-w-[70px] ' + (isActive ? 'text-amber-300' : 'text-slate-300') + '">' + p.name + '</span>' +
+'<span class="font-bold text-xs truncate max-w-[80px] flex items-center ' + (isActive ? 'text-amber-300' : 'text-slate-300') + '">' + p.name + botTag + '</span>' +
 '<span class="text-[10px] text-slate-400 font-bold">3D: ' + avg + '</span>' +
 '</div>' +
 '<div class="text-center py-0.5 bg-slate-950/60 rounded-lg border border-slate-800/60 my-0.5">' +
@@ -1025,6 +1235,14 @@ badge.className = "text-[9px] text-slate-400 font-bold uppercase tracking-widest
 renderFavoritesBar();
 updateTotalInputDisplay();
 }
+
+// Anti-Cheat Lock overlay logic: Lock keypad if Active Player is a Bot
+const lockerOverlay = document.getElementById('bot-overlay-locker');
+if (activeP.isBot) {
+  lockerOverlay.classList.remove('hidden');
+} else if (!isBotAnimating) {
+  lockerOverlay.classList.add('hidden');
+}
 }
 
 // ------------------------------------------
@@ -1040,7 +1258,7 @@ bar.innerHTML = '';
 
 favs.forEach(val => {
 const btn = document.createElement('button');
-btn.onclick = () => { playAudio('click'); quickInputScore(val); };
+btn.onclick = () => handleInputClick(() => quickInputScore(val));
 btn.className = "bg-slate-800 hover:bg-slate-700 active:bg-amber-600 text-amber-300 font-black py-1.5 rounded-lg border border-slate-700 text-base shadow transition";
 btn.innerText = val;
 bar.appendChild(btn);
@@ -1198,7 +1416,6 @@ if (scoredPoints > 180) {
 return;
 }
 
-// Any attempt to leave a score of 1, or reach 0 from a score > 170 (max checkout is 170) is a BUST
 if (scoredPoints > activeP.score || (activeP.score - scoredPoints === 1) || (activeP.score - scoredPoints === 0 && activeP.score > 170)) {
 scoredPoints = 0;
 dartsThrown = 3;
@@ -1211,7 +1428,6 @@ isSuccessfulCheckout = true;
 
 saveTurnHistoryState();
 
-// Record first 9 statistics per leg (check legDartsThrown before incrementing)
 if (activeP.legDartsThrown < 9) {
 activeP.first9Points += scoredPoints;
 activeP.first9Darts += dartsThrown;
@@ -1245,6 +1461,8 @@ advanceTurn();
 currentInputString = "0";
 perDartThrows = [];
 renderX01UI();
+
+checkAndRunBotTurn();
 }
 
 function triggerBustAlert(msg) {
@@ -1281,7 +1499,7 @@ if (match.history.length > 20) match.history.shift();
 }
 
 function undoLastTurn() {
-if (match.history.length === 0) {
+if (isBotAnimating || match.history.length === 0) {
 return;
 }
 
@@ -1298,6 +1516,19 @@ currentInputString = "0";
 perDartThrows = [];
 document.getElementById('x01-bust-alert').classList.add('hidden');
 renderX01UI();
+
+// Detect if undo brought the leg all the way back to turn 1 where Dartbot started
+const isStartOfLeg = match.history.length === 0 && match.round === 1;
+const startingP = match.players[match.startingPlayerIdx];
+
+if (isStartOfLeg && startingP && startingP.isBot) {
+  // Clear any existing cached decision for the initial turn so it can take its turn fresh
+  const cacheKey = match.sessionId + '_R1_P' + startingP.id + '_L' + startingP.legsWon + '_S' + startingP.startingScore;
+  if (match.turnCache && match.turnCache[cacheKey]) {
+    delete match.turnCache[cacheKey];
+  }
+  checkAndRunBotTurn();
+}
 }
 
 // ------------------------------------------
@@ -1342,7 +1573,6 @@ document.getElementById('win-modal').classList.remove('hidden');
 function cancelWinAndUndo() {
 document.getElementById('win-modal').classList.add('hidden');
 
-// Revert leg/set count changes if the win was opened
 if (pendingWinningPlayer) {
 if (isMatchOver) {
 pendingWinningPlayer.setsWon -= 1;
@@ -1375,11 +1605,9 @@ if (isMatchOver) {
 const winnerId = pendingWinningPlayer ? pendingWinningPlayer.id : null;
 const gameType = match.type;
 
-// Save full completed match
 recordMatchStats(pendingWinningPlayer, false, true);
 match.isFinished = true;
 
-// Pre-set filters on the statistics screen for immediate review
 document.getElementById('stats-time-filter').value = 'recent';
 document.getElementById('stats-gamemode-select').value = gameType;
 if (winnerId) {
@@ -1419,6 +1647,260 @@ pendingWinningPlayer = null;
 currentInputString = "0";
 perDartThrows = [];
 renderX01UI();
+
+checkAndRunBotTurn();
+}
+
+// ==========================================
+// DARTBOT SIMULATION & KEYPAD AUTOMATION
+// ==========================================
+function checkAndRunBotTurn() {
+  if (match.isFinished) return;
+
+  const activeP = match.players[match.activePlayerIdx];
+  if (!activeP || !activeP.isBot) return;
+
+  isBotAnimating = true;
+  document.getElementById('bot-overlay-locker').classList.remove('hidden');
+  document.getElementById('bot-thinking-indicator').classList.remove('hidden');
+
+  setTimeout(() => {
+    executeBotTurn(activeP);
+  }, 500);
+}
+
+function executeBotTurn(botPlayer) {
+  // Turn cache key ensures UNDO rerolls preserve identical bot decisions
+  const cacheKey = match.sessionId + '_R' + match.round + '_P' + botPlayer.id + '_L' + botPlayer.legsWon + '_S' + botPlayer.score;
+  let botDecision = match.turnCache ? match.turnCache[cacheKey] : null;
+
+  if (!botDecision) {
+    botDecision = generateBotTurnDecision(botPlayer);
+    if (!match.turnCache) match.turnCache = {};
+    match.turnCache[cacheKey] = botDecision;
+  }
+
+  if (botPlayer.score > 170) {
+    animateBotTotalInput(botDecision.totalScore);
+  } else {
+    animateBotPerDartInput(botDecision.darts);
+  }
+}
+
+function generateBotTurnDecision(botPlayer) {
+  const targetAvg = botPlayer.targetAvg || 50;
+  const currentScore = botPlayer.score;
+  const legDarts = botPlayer.legDartsThrown;
+
+  // High standard deviation from throw 1 for natural variability (highs/lows right away)
+  const stdev = Math.max(22, targetAvg * 0.45);
+
+  if (currentScore > 170) {
+    let rolledScore = 0;
+
+    // 25% chance to sample directly from discrete typical dart turn scores for added realism
+    if (Math.random() < 0.25) {
+      const candidates = TYPICAL_DARTS_SCORES.filter(s => Math.abs(s - targetAvg) <= stdev * 1.5);
+      if (candidates.length > 0) {
+        rolledScore = candidates[Math.floor(Math.random() * candidates.length)];
+      } else {
+        rolledScore = Math.round(randomNormal(targetAvg, stdev));
+      }
+    } else {
+      rolledScore = Math.round(randomNormal(targetAvg, stdev));
+    }
+
+    rolledScore = Math.max(0, Math.min(180, rolledScore));
+
+    while (IMPOSSIBLE_3DART_SCORES.has(rolledScore)) {
+      rolledScore += (Math.random() > 0.5 ? 1 : -1);
+    }
+
+    // Realistic Bust chance in Total Score mode (~5% random over-scores)
+    const isRandomBust = Math.random() < 0.05;
+
+    if (isRandomBust || rolledScore > currentScore || (currentScore - rolledScore === 1) || (currentScore - rolledScore === 0 && currentScore > 170)) {
+      rolledScore = 0; // Bust
+    }
+
+    return { mode: 'total', totalScore: rolledScore };
+  } else {
+    // Per-Dart Mode (Score <= 170)
+    let running = currentScore;
+    let darts = [];
+
+    // Calibrated Checkout Probabilities:
+    // Level 1 (avg 35) -> ~0.05 (5%)
+    // Level 10 (avg 80) -> ~0.30 (30%)
+    const levelFactor = (targetAvg - 35) / 45; // 0.0 to 1.0 scale
+    let baseDoubleProb = 0.05 + (levelFactor * 0.25); // Range 0.05 to 0.30
+
+    // Clutch boost if leg runs long (e.g., 30+ darts)
+    if (legDarts >= 30) {
+      baseDoubleProb += Math.min(0.20, (legDarts - 30) * 0.02);
+    }
+
+    for (let d = 0; d < 3; d++) {
+      if (running <= 1) break;
+
+      if (isCheckoutAvailable(running)) {
+        const isBullFinish = (running === 50);
+        const doubleVal = isBullFinish ? 25 : (running / 2);
+
+        if (Math.random() < baseDoubleProb) {
+          // Successful Checkout Double!
+          darts.push({ base: doubleVal, mult: 2, pts: running, isDouble: true });
+          running = 0;
+          break;
+        } else {
+          // Miss Double
+          const missRoll = Math.random();
+          if (missRoll < 0.30) {
+            // Hit single instead of double (e.g., S20 instead of D20)
+            const pts = doubleVal;
+            if (running - pts <= 1) {
+              // Busts by hitting single or leaving 1!
+              darts.push({ base: doubleVal, mult: 1, pts: pts, isDouble: false });
+              running = 0; // Stop turn due to bust
+              break;
+            } else {
+              darts.push({ base: doubleVal, mult: 1, pts: pts, isDouble: false });
+              running -= pts;
+            }
+          } else if (missRoll < 0.65) {
+            // Miss outside (0 pts)
+            darts.push({ base: 0, mult: 1, pts: 0, isDouble: false });
+          } else {
+            // Hit neighboring single
+            const neighbor = Math.max(1, Math.min(20, Math.round(doubleVal + (Math.random() > 0.5 ? 1 : -1))));
+            if (running - neighbor <= 1) {
+              darts.push({ base: neighbor, mult: 1, pts: neighbor, isDouble: false });
+              break; // Bust
+            }
+            darts.push({ base: neighbor, mult: 1, pts: neighbor, isDouble: false });
+            running -= neighbor;
+          }
+        }
+      } else {
+        // Setup Shot (Target single/triple to reach an even double)
+        let targetVal = 20;
+        let targetMult = 1;
+
+        if (running > 60) {
+          targetVal = 20;
+          targetMult = 3;
+        } else if (running > 40) {
+          targetVal = running - 32;
+          if (targetVal <= 0 || targetVal > 20) targetVal = 20;
+          targetMult = 1;
+        } else if (running % 2 !== 0) {
+          targetVal = 1;
+          targetMult = 1;
+        }
+
+        const hitAcc = Math.min(0.75, Math.max(0.20, targetAvg / 100));
+        if (Math.random() < hitAcc) {
+          const pts = targetVal * targetMult;
+          if (pts > running || running - pts === 1) {
+            darts.push({ base: targetVal, mult: targetMult, pts: pts, isDouble: (targetMult === 2) });
+            break; // Bust
+          }
+          darts.push({ base: targetVal, mult: targetMult, pts: pts, isDouble: (targetMult === 2) });
+          running -= pts;
+        } else {
+          // Off-target miss
+          const cleanPts = Math.max(0, Math.min(20, Math.round(randomNormal(targetVal, 3))));
+          if (cleanPts > running || running - cleanPts === 1) {
+            darts.push({ base: cleanPts, mult: 1, pts: cleanPts, isDouble: false });
+            break; // Bust
+          }
+          darts.push({ base: cleanPts, mult: 1, pts: cleanPts, isDouble: false });
+          running -= cleanPts;
+        }
+      }
+    }
+
+    return { mode: 'perdart', darts: darts };
+  }
+}
+
+// Keypad Button Flash Animation Helper (0.7s delay)
+function flashButton(btnEl, isSubmit = false, delayMs = 700) {
+  return new Promise((resolve) => {
+    if (!btnEl) {
+      setTimeout(resolve, delayMs);
+      return;
+    }
+    const highlightClass = isSubmit ? 'bot-submit-highlight' : 'bot-highlight';
+    btnEl.classList.add(highlightClass);
+    if (isSubmit) {
+      playAudio('submit');
+    } else {
+      playAudio('click');
+    }
+
+    setTimeout(() => {
+      btnEl.classList.remove(highlightClass);
+      setTimeout(resolve, delayMs - 200);
+    }, 200);
+  });
+}
+
+async function animateBotTotalInput(totalScore) {
+  clearInput();
+  const digits = totalScore.toString().split('');
+
+  for (let digit of digits) {
+    const btn = document.getElementById('btn-num-' + digit);
+    await flashButton(btn, false, 700);
+    appendNum(parseInt(digit));
+  }
+
+  const submitBtn = document.getElementById('btn-num-submit');
+  await flashButton(submitBtn, true, 700);
+
+  unlockBotLocker();
+  confirmScoreX01();
+}
+
+async function animateBotPerDartInput(darts) {
+  clearPerDart();
+
+  for (let dart of darts) {
+    if (dart.mult === 2) {
+      const modDoubleBtn = document.getElementById('mod-double');
+      await flashButton(modDoubleBtn, false, 700);
+      setDartMultiplier(2);
+    } else if (dart.mult === 3) {
+      const modTripleBtn = document.getElementById('mod-triple');
+      await flashButton(modTripleBtn, false, 700);
+      setDartMultiplier(3);
+    }
+
+    let numBtn = null;
+    if (dart.base === 0) {
+      numBtn = document.getElementById('btn-pd-miss');
+    } else if (dart.base === 25) {
+      numBtn = document.getElementById('btn-pd-25');
+    } else {
+      numBtn = document.getElementById('btn-pd-' + dart.base);
+    }
+
+    await flashButton(numBtn, false, 700);
+    inputPerDart(dart.base);
+  }
+
+  const submitBtn = document.getElementById('btn-pd-submit');
+  await flashButton(submitBtn, true, 700);
+
+  unlockBotLocker();
+  confirmScoreX01();
+}
+
+function unlockBotLocker() {
+  isBotAnimating = false;
+  document.getElementById('bot-overlay-locker').classList.add('hidden');
+  document.getElementById('bot-thinking-indicator').classList.add('hidden');
 }
 
 // ==========================================
@@ -1427,7 +1909,6 @@ renderX01UI();
 function recordMatchStats(winner, isAbandoned = false, isCompleted = false) {
 const totalLegsInMatch = match.players.reduce((sum, p) => sum + (p.totalLegsWon || 0), 0);
 
-// Do not save anything if no legs were completed
 if (totalLegsInMatch === 0) return;
 
 const matchRecord = {
@@ -1441,6 +1922,7 @@ totalLegsPlayed: totalLegsInMatch,
 players: match.players.map(p => ({
 id: p.id,
 name: p.name,
+isBot: !!p.isBot,
 score: p.score,
 setsWon: p.setsWon,
 legsWon: p.totalLegsWon,
@@ -1458,7 +1940,6 @@ isWinner: winner ? p.id === winner.id : false
 }))
 };
 
-// Replace existing record if saving incremental updates from same session ID
 const existingIndex = matchStatsHistory.findIndex(m => m.sessionId === match.sessionId);
 if (existingIndex !== -1) {
 matchStatsHistory[existingIndex] = matchRecord;
@@ -1474,15 +1955,33 @@ const profileSelect = document.getElementById('stats-profile-select');
 const timeFilter = document.getElementById('stats-time-filter').value;
 const gameModeFilter = document.getElementById('stats-gamemode-select').value;
 
-const currentProfVal = profileSelect.value || (profiles[0]?.id || 'none');
-profileSelect.innerHTML = profiles.map(p => '<option value="' + p.id + '"' + (p.id === currentProfVal ? ' selected' : '') + '>' + p.name + '</option>').join('');
+const sorted = getSortedProfiles();
+const currentProfVal = profileSelect.value || (sorted[0]?.id || 'none');
+
+let options = '';
+const humans = sorted.filter(p => !p.isBot);
+const bots = sorted.filter(p => p.isBot);
+
+if (humans.length > 0) {
+options += '<optgroup label="Real Players">';
+options += humans.map(p => '<option value="' + p.id + '"' + (p.id === currentProfVal ? ' selected' : '') + '>' + p.name + '</option>').join('');
+options += '</optgroup>';
+}
+
+if (bots.length > 0) {
+options += '<optgroup label="Dartbots">';
+options += bots.map(p => '<option value="' + p.id + '"' + (p.id === currentProfVal ? ' selected' : '') + '>' + p.name + '</option>').join('');
+options += '</optgroup>';
+}
+
+profileSelect.innerHTML = options;
+profileSelect.value = currentProfVal;
 
 const selectedProfId = profileSelect.value;
 if (!selectedProfId || profiles.length === 0) return;
 
 const now = Date.now();
 
-// Filter matches relevant to the currently selected profile and game mode
 let playerRelevantMatches = matchStatsHistory.filter(m => {
 const hasPlayer = m.players && m.players.some(p => p.id === selectedProfId);
 if (!hasPlayer) return false;
@@ -1490,7 +1989,6 @@ if (gameModeFilter !== 'all' && m.gameType !== gameModeFilter) return false;
 return true;
 });
 
-// Apply timeframe filter
 let filteredMatches = playerRelevantMatches.filter(m => {
 const mTime = m.timestamp || now;
 if (timeFilter === 'recent') {
@@ -1523,7 +2021,6 @@ let bestLegOverall = null;
 filteredMatches.forEach(m => {
 const playerStats = m.players.find(p => p.id === selectedProfId);
 if (playerStats) {
-// Matches played and match win rate count ONLY if the match was fully completed
 if (m.isMatchCompleted) {
 matchesPlayed++;
 if (playerStats.isWinner) matchesWon++;
@@ -1591,36 +2088,23 @@ renderPlayerPickers();
 let deferredPrompt = null;
 let isStandalone = false;
 
-// Check if app is running in standalone mode (installed)
 if (window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches) {
   isStandalone = true;
   document.body.classList.add('pwa-standalone');
-  console.log('Running as standalone PWA app');
 }
 
-// Handle the beforeinstallprompt event for Android
 window.addEventListener('beforeinstallprompt', (e) => {
-  console.log('beforeinstallprompt event triggered');
   e.preventDefault();
   deferredPrompt = e;
 });
 
-// Track if app was successfully installed
 window.addEventListener('appinstalled', () => {
-  console.log('App successfully installed');
   deferredPrompt = null;
   isStandalone = true;
 });
 
-// Detect display mode changes (user might exit standalone mode)
 window.matchMedia('(display-mode: standalone)').addEventListener('change', (e) => {
-  if (e.matches) {
-    console.log('App is in standalone mode');
-    isStandalone = true;
-  } else {
-    console.log('App exited standalone mode');
-    isStandalone = false;
-  }
+  isStandalone = e.matches;
 });
 
 // ==========================================
@@ -1630,22 +2114,15 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js', { scope: './' })
       .then((registration) => {
-        console.log('Service Worker registered successfully:', registration);
-        
-        // Listen for updates to the service worker
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
-              console.log('Service Worker updated - app will use new version on next reload');
+              console.log('Service Worker updated');
             }
           });
         });
-        
-        // Check for updates periodically
-        setInterval(() => {
-          registration.update();
-        }, 60000); // Check every minute
+        setInterval(() => { registration.update(); }, 60000);
       })
       .catch((error) => {
         console.warn('Service Worker registration failed:', error);
@@ -1653,17 +2130,13 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Lock to portrait orientation for app (optional - manifest already handles fullscreen)
 if ('orientation' in screen && screen.orientation) {
   screen.orientation.lock('portrait').catch((err) => {
     console.log('Could not lock orientation:', err);
   });
 }
-
-// Enable app installation on iOS
-if (window.navigator.standalone === false) {
-  console.log('App is installable on iOS');
-}
 </script>
 </body>
 </html>
+
+ 
