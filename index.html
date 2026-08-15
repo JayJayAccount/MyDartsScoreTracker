@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="description" content="Progressive Web App for tracking darts scores offline with AI Dartbots">
 <meta name="theme-color" content="#b45309">
 <meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Darts Tracker">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="My Darts Score Tracker">
@@ -84,7 +84,7 @@ transform: scale(0.96);
 <section id="screen-menu" class="absolute inset-0 p-4 flex flex-col justify-between bg-slate-900 z-10 overflow-y-auto">
 <div class="text-center py-0.5">
 <h1 class="text-2xl font-black text-amber-500 tracking-wider">MY DARTS APP</h1>
-<p class="text-xs text-slate-400">Score and Stats Tracker</p>
+<p class="text-xs text-slate-400">Score and Stats Tracker (IndexedDB Powered)</p>
 </div>
 
 <!-- Mode Selection -->
@@ -288,8 +288,12 @@ CONFIRM SCORE
 <!-- ================= 3. PLAYER PROFILES & FAVORITES SCREEN ================= -->
 <section id="screen-profiles" class="absolute inset-0 p-3.5 flex flex-col justify-between hidden bg-slate-900 z-10 overflow-y-auto">
 <div class="space-y-3.5">
+<!-- Profile Header: Reset Data Button moved to far left -->
 <div class="flex justify-between items-center">
-<h2 class="text-2xl font-black text-amber-500">Player Profiles</h2>
+<button onclick="playAudio('click'); promptResetMatchData()" class="px-2.5 py-1.5 bg-rose-900/80 hover:bg-rose-800 text-rose-200 text-xs rounded-lg font-bold border border-rose-700 flex items-center space-x-1 shadow" title="Reset All Match Data">
+<span>Data</span> <i class="fa-solid fa-trash-can"></i>
+</button>
+<h2 class="text-xl font-black text-amber-500">Player Profiles</h2>
 <button onclick="playAudio('click'); openNewProfileModal()" class="px-3 py-1.5 bg-emerald-600 text-xs rounded-lg font-bold hover:bg-emerald-500 border border-emerald-400">
 + New Profile
 </button>
@@ -323,13 +327,19 @@ Back to Main Menu
 <section id="screen-stats" class="absolute inset-0 p-3.5 flex flex-col justify-between hidden bg-slate-900 z-10 overflow-y-auto">
 <div class="space-y-3.5">
 <div class="flex justify-between items-center">
+<div class="flex items-center space-x-2">
 <h2 class="text-2xl font-black text-amber-500">Player Statistics</h2>
+<button onclick="playAudio('click'); openGraphModal()" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-lg border border-amber-400 flex items-center space-x-1 shadow">
+<i class="fa-solid fa-chart-line"></i><span>Graph</span>
+</button>
+</div>
+<!-- Logically ordered timeline dropdown: Recent -> 24 Hours -> 7 Days -> 30 Days -> Past Year -->
 <select id="stats-time-filter" onchange="renderStats()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg p-1.5 font-bold text-amber-300">
-<option value="all">All-Time</option>
 <option value="recent">Most Recent Match</option>
-<option value="30d">Last 30 Days</option>
-<option value="7d">Last 7 Days</option>
 <option value="24h">Last 24 Hours</option>
+<option value="7d">Last 7 Days</option>
+<option value="30d">Last 30 Days</option>
+<option value="1y">Past Year</option>
 </select>
 </div>
 
@@ -496,6 +506,55 @@ Delete
 </div>
 </div>
 
+<!-- RESET ALL MATCH DATA CONFIRMATION MODAL -->
+<div id="reset-data-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+<div class="bg-slate-800 border border-rose-500 rounded-2xl p-4 max-w-xs w-full text-center space-y-3 shadow-2xl">
+<i class="fa-solid fa-triangle-exclamation text-3xl text-rose-500"></i>
+<div>
+<h3 class="text-lg font-bold text-white">Delete All Match Data?</h3>
+<p class="text-xs text-slate-300 mt-2 leading-relaxed">Are you sure you want to delete all match data? Profiles will not be deleted.</p>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-2">
+<button onclick="playAudio('click'); closeResetDataModal()" class="py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-lg text-xs border border-slate-600">
+Cancel
+</button>
+<button onclick="playAudio('submit'); executeResetMatchData()" class="py-2.5 bg-rose-700 hover:bg-rose-600 text-white font-black rounded-lg text-xs border border-rose-500">
+Delete All Data
+</button>
+</div>
+</div>
+</div>
+
+<!-- GRAPH STATS MODAL -->
+<div id="graph-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+<div class="bg-slate-900 border border-amber-500/80 rounded-2xl p-3.5 max-w-sm w-full space-y-3 shadow-2xl relative flex flex-col">
+<!-- Modal Header -->
+<div class="flex justify-between items-center border-b border-slate-800 pb-2">
+<div>
+<h3 class="text-base font-black text-amber-400 tracking-wide flex items-center space-x-1.5">
+<i class="fa-solid fa-chart-line text-amber-500"></i>
+<span>3 Dart Average</span>
+</h3>
+<p class="text-[10px] text-slate-400" id="graph-subtitle">Player Performance History</p>
+</div>
+<button onclick="playAudio('click'); closeGraphModal()" class="text-slate-400 hover:text-white p-1 rounded-lg bg-slate-800 text-sm w-7 h-7 flex items-center justify-center border border-slate-700">
+<i class="fa-solid fa-xmark"></i>
+</button>
+</div>
+
+<!-- SVG Line Chart Canvas Container -->
+<div id="graph-canvas-container" class="w-full bg-slate-950 p-2 rounded-xl border border-slate-800 min-h-[200px] flex items-center justify-center">
+<!-- Dynamically Rendered SVG -->
+</div>
+
+<!-- Modal Footer Info -->
+<div class="text-[10px] text-slate-400 flex justify-between items-center px-1">
+<span>Timeline: <b id="graph-time-lbl" class="text-amber-300">Most Recent Match</b></span>
+<span>Mode: <b id="graph-mode-lbl" class="text-amber-300">All Modes</b></span>
+</div>
+</div>
+</div>
+
 </div>
 
 <!-- JAVASCRIPT APP LOGIC -->
@@ -579,44 +638,267 @@ function isBotProfile(id) {
 }
 
 // ==========================================
-// DATA STRUCTURES & LOCAL STORAGE PERSISTENCE
+// INDEXEDDB ENGINE FOR HIGH-SCALE PERSISTENCE
 // ==========================================
-let profiles = JSON.parse(localStorage.getItem('darts_profiles')) || [];
-let matchStatsHistory = JSON.parse(localStorage.getItem('darts_stats_history')) || [];
+const DB_NAME = 'DartsTrackerDB';
+const DB_VERSION = 1;
+let db = null;
+let profiles = [];
 
-function saveState() {
-  localStorage.setItem('darts_profiles', JSON.stringify(profiles));
-  localStorage.setItem('darts_stats_history', JSON.stringify(matchStatsHistory));
-}
+// Initialize IndexedDB with Stores & Indexes for fast sub-second range queries
+function initIndexedDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-// Ensure Dartbot profiles are present in local storage profiles array
-DARTBOT_PROFILES.forEach(bot => {
-  if (!profiles.some(p => p.id === bot.id)) {
-    profiles.push({
-      id: bot.id,
-      name: bot.name,
-      isBot: true,
-      targetAvg: bot.targetAvg,
-      favorites: [26, 41, 45, 60, 85, 100, 120, 140, 180]
-    });
-  }
-});
+    request.onerror = (e) => {
+      console.error("IndexedDB initialization failed:", e.target.errorCode);
+      reject(e.target.errorCode);
+    };
 
-// Default initial profile creation if no human profile exists
-if (!profiles.some(p => !p.isBot)) {
-  profiles.unshift({
-    id: 'prof_' + Date.now(),
-    name: 'Player 1',
-    favorites: [26, 41, 45, 60, 85, 100, 120, 140, 180]
+    request.onsuccess = (e) => {
+      db = e.target.result;
+      resolve(db);
+    };
+
+    request.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('profiles')) {
+        db.createObjectStore('profiles', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('matchStats')) {
+        const matchStore = db.createObjectStore('matchStats', { keyPath: 'sessionId' });
+        matchStore.createIndex('timestamp', 'timestamp', { unique: false });
+      }
+    };
   });
 }
-saveState();
+
+// Automatic Purging: Delete matches older than 1 year (365 days)
+async function purgeMatchesOlderThanOneYear() {
+  if (!db) return;
+  const oneYearAgo = Date.now() - (365 * 24 * 60 * 60 * 1000);
+
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction('matchStats', 'readwrite');
+      const store = tx.objectStore('matchStats');
+      const index = store.index('timestamp');
+      const range = IDBKeyRange.upperBound(oneYearAgo, true);
+      const request = index.openCursor(range);
+      let count = 0;
+
+      request.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          store.delete(cursor.primaryKey);
+          count++;
+          cursor.continue();
+        } else {
+          if (count > 0) console.log(`[IndexedDB] Auto-purged ${count} matches older than 1 year.`);
+          resolve(count);
+        }
+      };
+      request.onerror = () => resolve(0);
+    } catch (err) {
+      console.warn("Purge error:", err);
+      resolve(0);
+    }
+  });
+}
+
+// Load all user profiles from IndexedDB (with legacy localStorage migration)
+async function loadProfilesFromDB() {
+  if (!db) return [];
+
+  // Migrate legacy localStorage profiles if present
+  const legacyProfilesStr = localStorage.getItem('darts_profiles');
+  if (legacyProfilesStr) {
+    try {
+      const legacyProfiles = JSON.parse(legacyProfilesStr);
+      if (Array.isArray(legacyProfiles) && legacyProfiles.length > 0) {
+        const tx = db.transaction('profiles', 'readwrite');
+        const store = tx.objectStore('profiles');
+        legacyProfiles.forEach(p => store.put(p));
+        localStorage.removeItem('darts_profiles');
+      }
+    } catch (err) {
+      console.warn("Failed legacy profiles migration:", err);
+    }
+  }
+
+  // Migrate legacy localStorage match history if present
+  const legacyStatsStr = localStorage.getItem('darts_stats_history');
+  if (legacyStatsStr) {
+    try {
+      const legacyStats = JSON.parse(legacyStatsStr);
+      if (Array.isArray(legacyStats) && legacyStats.length > 0) {
+        const tx = db.transaction('matchStats', 'readwrite');
+        const store = tx.objectStore('matchStats');
+        legacyStats.forEach(m => {
+          if (m && m.sessionId) store.put(m);
+        });
+        localStorage.removeItem('darts_stats_history');
+      }
+    } catch (err) {
+      console.warn("Failed legacy stats migration:", err);
+    }
+  }
+
+  // Fetch profiles from IndexedDB
+  let loaded = await new Promise((resolve) => {
+    const tx = db.transaction('profiles', 'readonly');
+    const store = tx.objectStore('profiles');
+    const req = store.getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => resolve([]);
+  });
+
+  // Inject system Dartbot profiles if missing
+  let changed = false;
+  DARTBOT_PROFILES.forEach(bot => {
+    if (!loaded.some(p => p.id === bot.id)) {
+      const botObj = {
+        id: bot.id,
+        name: bot.name,
+        isBot: true,
+        targetAvg: bot.targetAvg,
+        favorites: [26, 41, 45, 60, 85, 100, 120, 140, 180]
+      };
+      loaded.push(botObj);
+      saveProfileToDB(botObj);
+      changed = true;
+    }
+  });
+
+  // Ensure initial human profile exists if none present
+  if (!loaded.some(p => !p.isBot)) {
+    const defaultHuman = {
+      id: 'prof_' + Date.now(),
+      name: 'Player 1',
+      favorites: [26, 41, 45, 60, 85, 100, 120, 140, 180]
+    };
+    loaded.unshift(defaultHuman);
+    saveProfileToDB(defaultHuman);
+  }
+
+  return loaded;
+}
+
+function saveProfileToDB(prof) {
+  if (!db) return;
+  const tx = db.transaction('profiles', 'readwrite');
+  tx.objectStore('profiles').put(prof);
+}
+
+function deleteProfileFromDB(id) {
+  if (!db) return;
+  const tx = db.transaction('profiles', 'readwrite');
+  tx.objectStore('profiles').delete(id);
+}
+
+function saveMatchRecordToDB(matchRecord) {
+  if (!db) return;
+  const tx = db.transaction('matchStats', 'readwrite');
+  tx.objectStore('matchStats').put(matchRecord);
+  purgeMatchesOlderThanOneYear();
+}
+
+function deleteAllMatchesFromDB() {
+  if (!db) return new Promise(r => r());
+  return new Promise((resolve) => {
+    const tx = db.transaction('matchStats', 'readwrite');
+    tx.objectStore('matchStats').clear();
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => resolve();
+  });
+}
+
+// Fetch matches filtered by timeframe using IndexedDB KeyRanges to ensure zero UI lag even with 10,000+ entries
+function getFilteredMatchesFromDB(selectedProfId, timeFilter, gameModeFilter) {
+  return new Promise((resolve) => {
+    if (!db) { resolve([]); return; }
+
+    const now = Date.now();
+    let lowerBoundTime = 0;
+
+    if (timeFilter === '24h') lowerBoundTime = now - (24 * 60 * 60 * 1000);
+    else if (timeFilter === '7d') lowerBoundTime = now - (7 * 24 * 60 * 60 * 1000);
+    else if (timeFilter === '30d') lowerBoundTime = now - (30 * 24 * 60 * 60 * 1000);
+    else if (timeFilter === '1y') lowerBoundTime = now - (365 * 24 * 60 * 60 * 1000);
+
+    const tx = db.transaction('matchStats', 'readonly');
+    const store = tx.objectStore('matchStats');
+    const index = store.index('timestamp');
+
+    const result = [];
+
+    if (timeFilter === 'recent') {
+      // Fast backward cursor lookup: retrieves ONLY the single latest matching record
+      const cursorReq = index.openCursor(null, 'prev');
+      cursorReq.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          const m = cursor.value;
+          const hasPlayer = m.players && m.players.some(p => p.id === selectedProfId);
+          const modeMatch = gameModeFilter === 'all' || m.gameType === gameModeFilter;
+          if (hasPlayer && modeMatch) {
+            result.push(m);
+            resolve(result);
+            return;
+          }
+          cursor.continue();
+        } else {
+          resolve(result);
+        }
+      };
+      cursorReq.onerror = () => resolve([]);
+      return;
+    }
+
+    // Range bounded query for 24h, 7d, 30d, 1y filters
+    const range = lowerBoundTime > 0 ? IDBKeyRange.lowerBound(lowerBoundTime) : null;
+    const request = index.openCursor(range);
+
+    request.onsuccess = (e) => {
+      const cursor = e.target.result;
+      if (cursor) {
+        const m = cursor.value;
+        const hasPlayer = m.players && m.players.some(p => p.id === selectedProfId);
+        const modeMatch = gameModeFilter === 'all' || m.gameType === gameModeFilter;
+
+        if (hasPlayer && modeMatch) {
+          result.push(m);
+        }
+        cursor.continue();
+      } else {
+        resolve(result);
+      }
+    };
+
+    request.onerror = () => resolve([]);
+  });
+}
 
 // Helper to get profiles sorted: Humans top, Bots bottom
 function getSortedProfiles() {
   const humans = profiles.filter(p => !p.isBot);
   const bots = profiles.filter(p => p.isBot);
   return [...humans, ...bots];
+}
+
+// Helper: Downsamples large datasets efficiently using uniform stride sampling
+function downsampleMatches(arr, targetMax = 50) {
+  if (!arr || arr.length <= targetMax) return arr;
+  const stride = arr.length / targetMax;
+  const result = [];
+  for (let i = 0; i < targetMax; i++) {
+    const idx = Math.min(arr.length - 1, Math.floor(i * stride));
+    result.push(arr[idx]);
+  }
+  if (result[result.length - 1] !== arr[arr.length - 1]) {
+    result[result.length - 1] = arr[arr.length - 1];
+  }
+  return result;
 }
 
 // Helper: Normal distribution random variable (Box-Muller transform)
@@ -640,9 +922,8 @@ const TYPICAL_DARTS_SCORES = [
 // APP STATE MANAGEMENT
 // ==========================================
 let currentGameType = '501';
-const initialHuman = profiles.find(p => !p.isBot);
-let selectedProfileIds = [initialHuman ? initialHuman.id : 'none', 'none', 'none', 'none'];
-let activeEditingProfileId = initialHuman ? initialHuman.id : profiles[0]?.id;
+let selectedProfileIds = ['none', 'none', 'none', 'none'];
+let activeEditingProfileId = null;
 let pendingWinningPlayer = null;
 let isMatchOver = false;
 let pendingTargetScreen = 'screen-menu';
@@ -667,6 +948,23 @@ let currentInputString = "0";
 let perDartMultiplier = 1;
 let perDartThrows = [];
 let isBotAnimating = false;
+
+// Initialize Async IndexedDB App Engine
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await initIndexedDB();
+    await purgeMatchesOlderThanOneYear();
+    profiles = await loadProfilesFromDB();
+
+    const initialHuman = profiles.find(p => !p.isBot);
+    selectedProfileIds = [initialHuman ? initialHuman.id : (profiles[0]?.id || 'none'), 'none', 'none', 'none'];
+    activeEditingProfileId = initialHuman ? initialHuman.id : profiles[0]?.id;
+
+    renderPlayerPickers();
+  } catch (err) {
+    console.error("IndexedDB engine failed to start:", err);
+  }
+});
 
 // Helper function: Checkout attempt valid only for scores <= 50 that have a direct double finish
 function isCheckoutAvailable(score) {
@@ -699,38 +997,10 @@ function triggerUndoLockBanner() {
 }
 
 // ==========================================
-// UI SCREEN NAVIGATION & EXIT GUARD
+// UI SCREEN NAVIGATION & BACK BUTTON GUARD
 // ==========================================
-let isNavigatingProgrammatically = false;
 
-// Initialize history entry on startup
-if (!history.state || !history.state.screen) {
-history.replaceState({ screen: 'screen-menu' }, '');
-}
-
-function showScreen(screenId, pushHistory = true) {
-const currentScreen = getCurrentScreenId();
-
-if (pushHistory && currentScreen !== screenId) {
-isNavigatingProgrammatically = true;
-
-if (screenId === 'screen-menu') {
-// Re-anchor history state at main screen
-history.replaceState({ screen: 'screen-menu' }, '');
-} else {
-const isSubScreen = (currentScreen === 'screen-profiles' || currentScreen === 'screen-stats');
-const isNewSubScreen = (screenId === 'screen-profiles' || screenId === 'screen-stats');
-
-// Replaces state when switching between sub-screens so Back button always leads back to Main Menu
-if (isSubScreen && isNewSubScreen) {
-history.replaceState({ screen: screenId }, '');
-} else {
-history.pushState({ screen: screenId }, '');
-}
-}
-isNavigatingProgrammatically = false;
-}
-
+function showScreen(screenId) {
 ['screen-menu', 'screen-x01', 'screen-profiles', 'screen-stats'].forEach(id => {
 document.getElementById(id).classList.add('hidden');
 });
@@ -749,46 +1019,65 @@ if (!document.getElementById(id).classList.contains('hidden')) return id;
 return 'screen-menu';
 }
 
-// Intercept Back Navigation Button Press
+// Initialize history state on app load
+if (!history.state || history.state.page !== 'home') {
+  history.replaceState({ page: 'home' }, '');
+}
+
+// Strict Back Button Behavior Logic:
 window.addEventListener('popstate', function (e) {
-if (isNavigatingProgrammatically) return;
+  const exitModal = document.getElementById('exit-modal');
+  const newProfileModal = document.getElementById('new-profile-modal');
+  const deleteProfileModal = document.getElementById('delete-profile-modal');
+  const resetDataModal = document.getElementById('reset-data-modal');
+  const graphModal = document.getElementById('graph-modal');
+  const dartbotRuleModal = document.getElementById('dartbot-rule-modal');
 
-const exitModal = document.getElementById('exit-modal');
-const newProfileModal = document.getElementById('new-profile-modal');
-const deleteProfileModal = document.getElementById('delete-profile-modal');
-const dartbotRuleModal = document.getElementById('dartbot-rule-modal');
+  if (graphModal && !graphModal.classList.contains('hidden')) {
+    closeGraphModal();
+    history.pushState({ page: 'home' }, '');
+    return;
+  }
+  if (resetDataModal && !resetDataModal.classList.contains('hidden')) {
+    closeResetDataModal();
+    history.pushState({ page: 'home' }, '');
+    return;
+  }
+  if (exitModal && !exitModal.classList.contains('hidden')) {
+    closeExitModal();
+    history.pushState({ page: 'home' }, '');
+    return;
+  }
+  if (newProfileModal && !newProfileModal.classList.contains('hidden')) {
+    closeNewProfileModal();
+    history.pushState({ page: 'home' }, '');
+    return;
+  }
+  if (deleteProfileModal && !deleteProfileModal.classList.contains('hidden')) {
+    closeDeleteProfileModal();
+    history.pushState({ page: 'home' }, '');
+    return;
+  }
+  if (dartbotRuleModal && !dartbotRuleModal.classList.contains('hidden')) {
+    closeDartbotRuleModal();
+    history.pushState({ page: 'home' }, '');
+    return;
+  }
 
-if (exitModal && !exitModal.classList.contains('hidden')) {
-closeExitModal();
-return;
-}
-if (newProfileModal && !newProfileModal.classList.contains('hidden')) {
-closeNewProfileModal();
-return;
-}
-if (deleteProfileModal && !deleteProfileModal.classList.contains('hidden')) {
-closeDeleteProfileModal();
-return;
-}
-if (dartbotRuleModal && !dartbotRuleModal.classList.contains('hidden')) {
-closeDartbotRuleModal();
-return;
-}
+  const currentScreen = getCurrentScreenId();
 
-const currentScreen = getCurrentScreenId();
+  if (currentScreen === 'screen-x01' && !match.isFinished) {
+    history.pushState({ page: 'home' }, '');
+    pendingTargetScreen = 'screen-menu';
+    document.getElementById('exit-modal').classList.remove('hidden');
+    return;
+  }
 
-if (currentScreen === 'screen-x01' && !match.isFinished) {
-history.pushState({ screen: 'screen-x01' }, '');
-pendingTargetScreen = 'screen-menu';
-document.getElementById('exit-modal').classList.remove('hidden');
-return;
-}
-
-if (currentScreen === 'screen-profiles' || currentScreen === 'screen-stats' || currentScreen === 'screen-x01') {
-showScreen('screen-menu', false);
-history.replaceState({ screen: 'screen-menu' }, '');
-return;
-}
+  if (currentScreen !== 'screen-menu') {
+    showScreen('screen-menu');
+    history.pushState({ page: 'home' }, '');
+    return;
+  }
 });
 
 window.addEventListener('beforeunload', function (e) {
@@ -879,7 +1168,7 @@ const humans = sorted.filter(p => !p.isBot);
 const bots = sorted.filter(p => p.isBot);
 
 if (humans.length > 0) {
-options += '<optgroup label="Real Players">';
+options += '<optgroup label="Players">';
 options += humans.map(p => '<option value="' + p.id + '"' + (p.id === currentVal ? ' selected' : '') + '>' + p.name + '</option>').join('');
 options += '</optgroup>';
 }
@@ -899,7 +1188,7 @@ container.appendChild(div);
 }
 
 // ==========================================
-// PROFILE MANAGEMENT
+// PROFILE MANAGEMENT & RESET MATCH DATA
 // ==========================================
 function openNewProfileModal() {
 document.getElementById('new-profile-input').value = '';
@@ -934,7 +1223,7 @@ favorites: [26, 41, 45, 60, 85, 100, 120, 140, 180]
 };
 
 profiles.push(newProfile);
-saveState();
+saveProfileToDB(newProfile);
 
 const emptySlotIdx = selectedProfileIds.indexOf('none');
 if (emptySlotIdx !== -1) {
@@ -1037,7 +1326,7 @@ newFavs.push(Math.min(180, Math.max(0, val)));
 }
 
 prof.favorites = newFavs;
-saveState();
+saveProfileToDB(prof);
 }
 
 function promptDeleteProfile(id) {
@@ -1057,11 +1346,7 @@ pendingDeleteProfileId = null;
 function executeDeleteProfile() {
 if (!pendingDeleteProfileId) return;
 
-matchStatsHistory.forEach(m => {
-m.players = m.players.filter(p => p.id !== pendingDeleteProfileId);
-});
-matchStatsHistory = matchStatsHistory.filter(m => m.players.length > 0);
-
+deleteProfileFromDB(pendingDeleteProfileId);
 profiles = profiles.filter(p => p.id !== pendingDeleteProfileId);
 selectedProfileIds = selectedProfileIds.map(id => id === pendingDeleteProfileId ? 'none' : id);
 
@@ -1069,10 +1354,25 @@ if (activeEditingProfileId === pendingDeleteProfileId) {
 activeEditingProfileId = profiles[0]?.id || null;
 }
 
-saveState();
 closeDeleteProfileModal();
 renderPlayerPickers();
 renderProfilesScreen();
+}
+
+// Reset Match Data (keeps profiles and quick scores intact)
+function promptResetMatchData() {
+document.getElementById('reset-data-modal').classList.remove('hidden');
+}
+
+function closeResetDataModal() {
+document.getElementById('reset-data-modal').classList.add('hidden');
+}
+
+async function executeResetMatchData() {
+await deleteAllMatchesFromDB();
+closeResetDataModal();
+renderProfilesScreen();
+renderStats();
 }
 
 // ==========================================
@@ -1730,12 +2030,9 @@ function generateBotTurnDecision(botPlayer) {
     let darts = [];
 
     // Calibrated Checkout Probabilities:
-    // Level 1 (avg 35) -> ~0.05 (5%)
-    // Level 10 (avg 80) -> ~0.30 (30%)
     const levelFactor = (targetAvg - 35) / 45; // 0.0 to 1.0 scale
     let baseDoubleProb = 0.05 + (levelFactor * 0.25); // Range 0.05 to 0.30
 
-    // Clutch boost if leg runs long (e.g., 30+ darts)
     if (legDarts >= 30) {
       baseDoubleProb += Math.min(0.20, (legDarts - 30) * 0.02);
     }
@@ -1756,10 +2053,9 @@ function generateBotTurnDecision(botPlayer) {
           // Miss Double
           const missRoll = Math.random();
           if (missRoll < 0.30) {
-            // Hit single instead of double (e.g., S20 instead of D20)
+            // Hit single instead of double
             const pts = doubleVal;
             if (running - pts <= 1) {
-              // Busts by hitting single or leaving 1!
               darts.push({ base: doubleVal, mult: 1, pts: pts, isDouble: false });
               running = 0; // Stop turn due to bust
               break;
@@ -1940,17 +2236,11 @@ isWinner: winner ? p.id === winner.id : false
 }))
 };
 
-const existingIndex = matchStatsHistory.findIndex(m => m.sessionId === match.sessionId);
-if (existingIndex !== -1) {
-matchStatsHistory[existingIndex] = matchRecord;
-} else {
-matchStatsHistory.push(matchRecord);
+saveMatchRecordToDB(matchRecord);
 }
 
-saveState();
-}
-
-function renderStats() {
+// Optimized streaming aggregation for high scale datasets (10,000+ matches)
+async function renderStats() {
 const profileSelect = document.getElementById('stats-profile-select');
 const timeFilter = document.getElementById('stats-time-filter').value;
 const gameModeFilter = document.getElementById('stats-gamemode-select').value;
@@ -1963,7 +2253,7 @@ const humans = sorted.filter(p => !p.isBot);
 const bots = sorted.filter(p => p.isBot);
 
 if (humans.length > 0) {
-options += '<optgroup label="Real Players">';
+options += '<optgroup label="Players">';
 options += humans.map(p => '<option value="' + p.id + '"' + (p.id === currentProfVal ? ' selected' : '') + '>' + p.name + '</option>').join('');
 options += '</optgroup>';
 }
@@ -1980,28 +2270,8 @@ profileSelect.value = currentProfVal;
 const selectedProfId = profileSelect.value;
 if (!selectedProfId || profiles.length === 0) return;
 
-const now = Date.now();
-
-let playerRelevantMatches = matchStatsHistory.filter(m => {
-const hasPlayer = m.players && m.players.some(p => p.id === selectedProfId);
-if (!hasPlayer) return false;
-if (gameModeFilter !== 'all' && m.gameType !== gameModeFilter) return false;
-return true;
-});
-
-let filteredMatches = playerRelevantMatches.filter(m => {
-const mTime = m.timestamp || now;
-if (timeFilter === 'recent') {
-return m === playerRelevantMatches[playerRelevantMatches.length - 1];
-} else if (timeFilter === '24h') {
-return (now - mTime) <= (24 * 60 * 60 * 1000);
-} else if (timeFilter === '7d') {
-return (now - mTime) <= (7 * 24 * 60 * 60 * 1000);
-} else if (timeFilter === '30d') {
-return (now - mTime) <= (30 * 24 * 60 * 60 * 1000);
-}
-return true;
-});
+// Fast IndexedDB fetch
+const filteredMatches = await getFilteredMatchesFromDB(selectedProfId, timeFilter, gameModeFilter);
 
 let matchesPlayed = 0;
 let matchesWon = 0;
@@ -2018,49 +2288,53 @@ let highestCheckout = 0;
 let overallHighScore = 0;
 let bestLegOverall = null;
 
-filteredMatches.forEach(m => {
-const playerStats = m.players.find(p => p.id === selectedProfId);
-if (playerStats) {
-if (m.isMatchCompleted) {
-matchesPlayed++;
-if (playerStats.isWinner) matchesWon++;
-}
+// Single-pass linear accumulation avoiding array overheads
+for (let i = 0; i < filteredMatches.length; i++) {
+  const m = filteredMatches[i];
+  const playerStats = m.players ? m.players.find(p => p.id === selectedProfId) : null;
+  if (playerStats) {
+    if (m.isMatchCompleted) {
+      matchesPlayed++;
+      if (playerStats.isWinner) matchesWon++;
+    }
 
-const pLegsWon = playerStats.legsWon || 0;
-legsWon += pLegsWon;
+    const pLegsWon = playerStats.legsWon || 0;
+    legsWon += pLegsWon;
 
-totalLegsPlayed += playerStats.totalLegsPlayed || pLegsWon || 0;
+    totalLegsPlayed += playerStats.totalLegsPlayed || pLegsWon || 0;
 
-if (playerStats.bestLegDarts !== null && playerStats.bestLegDarts !== undefined) {
-if (bestLegOverall === null || playerStats.bestLegDarts < bestLegOverall) {
-bestLegOverall = playerStats.bestLegDarts;
-}
-}
+    if (playerStats.bestLegDarts !== null && playerStats.bestLegDarts !== undefined) {
+      if (bestLegOverall === null || playerStats.bestLegDarts < bestLegOverall) {
+        bestLegOverall = playerStats.bestLegDarts;
+      }
+    }
 
-let sumLegs = 0;
-if (m.totalLegsPlayed && m.totalLegsPlayed > 0) {
-sumLegs = m.totalLegsPlayed;
-} else {
-m.players.forEach(p => sumLegs += (p.legsWon || 0));
-}
-totalLegsInMatches += Math.max(sumLegs, 1);
+    let sumLegs = 0;
+    if (m.totalLegsPlayed && m.totalLegsPlayed > 0) {
+      sumLegs = m.totalLegsPlayed;
+    } else if (m.players) {
+      for (let j = 0; j < m.players.length; j++) {
+        sumLegs += (m.players[j].legsWon || 0);
+      }
+    }
+    totalLegsInMatches += Math.max(sumLegs, 1);
 
-totalPoints += playerStats.totalPointsScored || 0;
-totalDarts += playerStats.totalDartsThrown || 0;
-first9Points += playerStats.first9Points || 0;
-first9Darts += playerStats.first9Darts || 0;
-checkoutAttempts += playerStats.checkoutAttempts || 0;
-checkoutSuccess += playerStats.checkoutSuccess || 0;
+    totalPoints += playerStats.totalPointsScored || 0;
+    totalDarts += playerStats.totalDartsThrown || 0;
+    first9Points += playerStats.first9Points || 0;
+    first9Darts += playerStats.first9Darts || 0;
+    checkoutAttempts += playerStats.checkoutAttempts || 0;
+    checkoutSuccess += playerStats.checkoutSuccess || 0;
 
-if ((playerStats.highScore || 0) > overallHighScore) {
-overallHighScore = playerStats.highScore;
-}
+    if ((playerStats.highScore || 0) > overallHighScore) {
+      overallHighScore = playerStats.highScore;
+    }
 
-if ((playerStats.highestCheckout || 0) > highestCheckout) {
-highestCheckout = playerStats.highestCheckout;
+    if ((playerStats.highestCheckout || 0) > highestCheckout) {
+      highestCheckout = playerStats.highestCheckout;
+    }
+  }
 }
-}
-});
 
 const avg3Dart = totalDarts > 0 ? ((totalPoints / totalDarts) * 3).toFixed(1) : "0.0";
 const first9Avg = first9Darts > 0 ? ((first9Points / first9Darts) * 3).toFixed(1) : "0.0";
@@ -2080,7 +2354,143 @@ document.getElementById('stat-legs-played').innerText = matchesPlayed;
 document.getElementById('stat-total-legs-played').innerText = totalLegsPlayed;
 }
 
-renderPlayerPickers();
+// ==========================================
+// SCALED & OPTIMIZED 3-DART AVERAGE GRAPH MODAL
+// ==========================================
+async function openGraphModal() {
+const profileSelect = document.getElementById('stats-profile-select');
+const selectedProfId = profileSelect.value;
+const prof = profiles.find(p => p.id === selectedProfId);
+const timeFilter = document.getElementById('stats-time-filter').value;
+const gameModeFilter = document.getElementById('stats-gamemode-select').value;
+
+if (!prof) return;
+
+const timeMap = { 'recent': 'Most Recent Match', '24h': 'Last 24 Hours', '7d': 'Last 7 Days', '30d': 'Last 30 Days', '1y': 'Past Year' };
+const modeMap = { 'all': 'All Modes', '301': '301 Only', '501': '501 Only', '701': '701 Only' };
+
+document.getElementById('graph-subtitle').innerText = prof.name;
+document.getElementById('graph-time-lbl').innerText = timeMap[timeFilter] || 'Most Recent Match';
+document.getElementById('graph-mode-lbl').innerText = modeMap[gameModeFilter] || 'All Modes';
+
+const canvasContainer = document.getElementById('graph-canvas-container');
+
+// Retrieve matching history efficiently from IndexedDB
+const rawMatches = await getFilteredMatchesFromDB(selectedProfId, timeFilter, gameModeFilter);
+
+// Filter out 0-dart entries
+const rawPoints = [];
+for (let i = 0; i < rawMatches.length; i++) {
+  const m = rawMatches[i];
+  const pData = m.players ? m.players.find(p => p.id === selectedProfId) : null;
+  if (pData && pData.totalDartsThrown > 0) {
+    const avg = parseFloat(((pData.totalPointsScored / pData.totalDartsThrown) * 3).toFixed(1));
+    const dateStr = new Date(m.timestamp || Date.now()).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' });
+    rawPoints.push({ avg: avg, date: dateStr, timestamp: m.timestamp || 0 });
+  }
+}
+
+if (rawPoints.length === 0) {
+  canvasContainer.innerHTML = '<div class="text-center py-10 px-4 text-slate-400"><i class="fa-solid fa-chart-line text-3xl mb-2 text-amber-500/50"></i><p class="text-xs font-bold">No Match Data Available</p><p class="text-[10px] mt-1">Play matches with this profile to view your 3-Dart Average line graph.</p></div>';
+  document.getElementById('graph-modal').classList.remove('hidden');
+  return;
+}
+
+// Downsample plot array to maximum 50 points to eliminate render stutter on huge datasets
+const dataPoints = downsampleMatches(rawPoints, 50);
+
+// SVG Canvas dimensions
+const W = 320;
+const H = 200;
+const padL = 36;
+const padR = 15;
+const padT = 20;
+const padB = 30;
+
+const chartW = W - padL - padR;
+const chartH = H - padT - padB;
+
+// Calculate Y min/max scaling
+const avgs = dataPoints.map(d => d.avg);
+let minY = Math.floor(Math.min(...avgs) / 10) * 10;
+let maxY = Math.ceil(Math.max(...avgs) / 10) * 10;
+
+if (minY === maxY) {
+  minY = Math.max(0, minY - 10);
+  maxY = maxY + 10;
+}
+if (maxY < 40) maxY = 40;
+
+const yTicks = [];
+const numYTicks = 4;
+for (let i = 0; i <= numYTicks; i++) {
+  const val = Math.round(minY + (i * (maxY - minY) / numYTicks));
+  const y = padT + chartH - (i * chartH / numYTicks);
+  yTicks.push({ val: val, y: y });
+}
+
+// Generate SVG string
+let svg = `<svg viewBox="0 0 ${W} ${H}" class="w-full h-auto text-slate-400 font-sans select-none">`;
+
+// Horizontal Gridlines & Y-Axis Labels
+yTicks.forEach(tick => {
+  svg += `<line x1="${padL}" y1="${tick.y}" x2="${W - padR}" y2="${tick.y}" stroke="#334155" stroke-dasharray="2 2" stroke-width="1"/>`;
+  svg += `<text x="${padL - 6}" y="${tick.y + 3}" fill="#94a3b8" font-size="9" font-weight="bold" text-anchor="end">${tick.val}</text>`;
+});
+
+// X & Y Axis Base Lines
+svg += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H - padB}" stroke="#475569" stroke-width="1.5"/>`;
+svg += `<line x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" stroke="#475569" stroke-width="1.5"/>`;
+
+// Plot Data Points with positioning suited for small or massive point counts
+const coords = [];
+dataPoints.forEach((dp, idx) => {
+  let x = padL + chartW / 2;
+  if (dataPoints.length === 2) {
+    x = idx === 0 ? padL + (chartW * 0.3) : padL + (chartW * 0.7);
+  } else if (dataPoints.length > 2) {
+    x = padL + (idx * chartW / (dataPoints.length - 1));
+  }
+  const y = padT + chartH - (((dp.avg - minY) / (maxY - minY)) * chartH);
+  coords.push({ x: x, y: y, ...dp });
+});
+
+// Draw Line Path or Single-Point Horizontal Baseline
+if (coords.length > 1) {
+  const pathD = coords.reduce((acc, c, idx) => idx === 0 ? `M ${c.x} ${c.y}` : `${acc} L ${c.x} ${c.y}`, '');
+  svg += `<path d="${pathD}" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+} else if (coords.length === 1) {
+  // Dashed baseline indicator for single match history
+  svg += `<line x1="${padL}" y1="${coords[0].y}" x2="${W - padR}" y2="${coords[0].y}" stroke="#d97706" stroke-dasharray="4 4" stroke-width="1.5"/>`;
+}
+
+// Draw X-Axis Ticks / Date Labels
+const labelInterval = Math.ceil(coords.length / 5);
+coords.forEach((c, idx) => {
+  if (coords.length <= 2 || idx % labelInterval === 0 || idx === coords.length - 1) {
+    svg += `<line x1="${c.x}" y1="${H - padB}" x2="${c.x}" y2="${H - padB + 4}" stroke="#475569" stroke-width="1"/>`;
+    svg += `<text x="${c.x}" y="${H - padB + 14}" fill="#94a3b8" font-size="8" font-weight="bold" text-anchor="middle">${c.date}</text>`;
+  }
+});
+
+// Draw Dots and Value Badges
+const dotRadius = coords.length <= 2 ? 6 : coords.length <= 15 ? 4 : 2.5;
+coords.forEach(c => {
+  svg += `<circle cx="${c.x}" cy="${c.y}" r="${dotRadius}" fill="#0f172a" stroke="#f59e0b" stroke-width="${coords.length <= 2 ? 3 : 2}"/>`;
+  if (coords.length <= 10) {
+    svg += `<text x="${c.x}" y="${c.y - (coords.length <= 2 ? 10 : 7)}" fill="#fcd34d" font-size="${coords.length <= 2 ? 11 : 8}" font-weight="black" text-anchor="middle">${c.avg}</text>`;
+  }
+});
+
+svg += `</svg>`;
+canvasContainer.innerHTML = svg;
+
+document.getElementById('graph-modal').classList.remove('hidden');
+}
+
+function closeGraphModal() {
+document.getElementById('graph-modal').classList.add('hidden');
+}
 
 // ==========================================
 // PWA INSTALLATION & FULLSCREEN SUPPORT
@@ -2138,5 +2548,3 @@ if ('orientation' in screen && screen.orientation) {
 </script>
 </body>
 </html>
-
- 
