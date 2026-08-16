@@ -879,10 +879,10 @@ function getFilteredMatchesFromDB(selectedProfId, timeFilter, gameModeFilter) {
   });
 }
 
-// Helper to get profiles sorted: Humans top, Bots bottom
+// Helper to get profiles sorted: Humans top, Bots bottom (sorted numerically by level/target average)
 function getSortedProfiles() {
   const humans = profiles.filter(p => !p.isBot);
-  const bots = profiles.filter(p => p.isBot);
+  const bots = profiles.filter(p => p.isBot).sort((a, b) => (a.targetAvg || 0) - (b.targetAvg || 0));
   return [...humans, ...bots];
 }
 
