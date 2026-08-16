@@ -621,7 +621,7 @@ osc.stop(now + 0.12);
 // DARTBOT DEFINITIONS & CONSTANTS
 // ==========================================
 const DARTBOT_PROFILES = [
-  { id: 'bot_lvl1', name: 'Lvl 1 501 Dartbot', targetAvg: 35, isBot: true },
+  { id: 'bot_lvl1', name: 'Lvl 1 501 Dartbot', targetAvg: 30, isBot: true },
   { id: 'bot_lvl2', name: 'Lvl 2 501 Dartbot', targetAvg: 40, isBot: true },
   { id: 'bot_lvl3', name: 'Lvl 3 501 Dartbot', targetAvg: 45, isBot: true },
   { id: 'bot_lvl4', name: 'Lvl 4 501 Dartbot', targetAvg: 50, isBot: true },
@@ -629,8 +629,8 @@ const DARTBOT_PROFILES = [
   { id: 'bot_lvl6', name: 'Lvl 6 501 Dartbot', targetAvg: 60, isBot: true },
   { id: 'bot_lvl7', name: 'Lvl 7 501 Dartbot', targetAvg: 65, isBot: true },
   { id: 'bot_lvl8', name: 'Lvl 8 501 Dartbot', targetAvg: 70, isBot: true },
-  { id: 'bot_lvl9', name: 'Lvl 9 501 Dartbot', targetAvg: 75, isBot: true },
-  { id: 'bot_lvl10', name: 'Lvl 10 501 Dartbot', targetAvg: 80, isBot: true }
+  { id: 'bot_lvl9', name: 'Lvl 9 501 Dartbot', targetAvg: 80, isBot: true },
+  { id: 'bot_lvl10', name: 'Lvl 10 501 Dartbot', targetAvg: 95, isBot: true }
 ];
 
 function isBotProfile(id) {
@@ -911,11 +911,11 @@ function randomNormal(mean = 0, stdev = 1) {
 }
 
 // Valid single-dart checkout / setup finish targets (out of 170)
-const IMPOSSIBLE_3DART_SCORES = new Set([163, 166, 169, 172, 173, 175, 176, 178, 179]);
+const IMPOSSIBLE_3DART_SCORES = new Set([159, 162, 163, 165, 166, 168, 169, 171, 172, 173, 174, 175, 176, 177, 178, 179]);
 
 // Typical realistic darts score buckets for high-variance sampling
 const TYPICAL_DARTS_SCORES = [
-  0, 7, 11, 15, 19, 22, 26, 30, 32, 35, 41, 43, 45, 57, 60, 66, 77, 81, 85, 95, 100, 120, 133, 140, 180
+  0, 15, 19, 26, 32, 35, 41, 43, 45, 57, 60, 66, 77, 81, 85, 95, 100, 120, 133, 140, 180
 ];
 
 // ==========================================
