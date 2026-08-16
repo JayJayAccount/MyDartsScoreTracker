@@ -1021,7 +1021,7 @@ return 'screen-menu';
 
 // Initialize history state on app load
 if (!history.state || history.state.page !== 'home') {
-  history.replaceState({ page: 'home' }, '');
+  history.replaceState({ page: 'home', screen: getCurrentScreenId() }, '');
 }
 
 // Strict Back Button Behavior Logic:
@@ -1035,39 +1035,39 @@ window.addEventListener('popstate', function (e) {
 
   if (graphModal && !graphModal.classList.contains('hidden')) {
     closeGraphModal();
-    history.pushState({ page: 'home' }, '');
+    pushCurrentHistoryState();
     return;
   }
   if (resetDataModal && !resetDataModal.classList.contains('hidden')) {
     closeResetDataModal();
-    history.pushState({ page: 'home' }, '');
+    pushCurrentHistoryState();
     return;
   }
   if (exitModal && !exitModal.classList.contains('hidden')) {
     closeExitModal();
-    history.pushState({ page: 'home' }, '');
+    pushCurrentHistoryState();
     return;
   }
   if (newProfileModal && !newProfileModal.classList.contains('hidden')) {
     closeNewProfileModal();
-    history.pushState({ page: 'home' }, '');
+    pushCurrentHistoryState();
     return;
   }
   if (deleteProfileModal && !deleteProfileModal.classList.contains('hidden')) {
     closeDeleteProfileModal();
-    history.pushState({ page: 'home' }, '');
+    pushCurrentHistoryState();
     return;
   }
   if (dartbotRuleModal && !dartbotRuleModal.classList.contains('hidden')) {
     closeDartbotRuleModal();
-    history.pushState({ page: 'home' }, '');
+    pushCurrentHistoryState();
     return;
   }
 
   const currentScreen = getCurrentScreenId();
 
-  if (currentScreen === 'screen-x01' && !match.isFinished) {
-    history.pushState({ page: 'home' }, '');
+  if (currentScreen === 'screen-x01' && match.sessionId && !match.isFinished) {
+    pushCurrentHistoryState();
     pendingTargetScreen = 'screen-menu';
     document.getElementById('exit-modal').classList.remove('hidden');
     return;
@@ -1075,14 +1075,20 @@ window.addEventListener('popstate', function (e) {
 
   if (currentScreen !== 'screen-menu') {
     showScreen('screen-menu');
-    history.pushState({ page: 'home' }, '');
+    pushCurrentHistoryState();
     return;
   }
+
+  pushCurrentHistoryState();
 });
+
+function pushCurrentHistoryState() {
+  history.pushState({ page: 'home', screen: getCurrentScreenId() }, '');
+}
 
 window.addEventListener('beforeunload', function (e) {
 const x01Screen = document.getElementById('screen-x01');
-if (x01Screen && !x01Screen.classList.contains('hidden') && !match.isFinished) {
+if (x01Screen && !x01Screen.classList.contains('hidden') && match.sessionId && !match.isFinished) {
 e.preventDefault();
 e.returnValue = '';
 }
@@ -1091,7 +1097,7 @@ e.returnValue = '';
 function confirmHomeExit() {
 if (isBotAnimating) return;
 const x01Screen = document.getElementById('screen-x01');
-if (!x01Screen.classList.contains('hidden') && !match.isFinished) {
+if (!x01Screen.classList.contains('hidden') && match.sessionId && !match.isFinished) {
 pendingTargetScreen = 'screen-menu';
 document.getElementById('exit-modal').classList.remove('hidden');
 } else {
@@ -1102,7 +1108,7 @@ showScreen('screen-menu');
 function confirmHomeExitWithScreen(targetScreen) {
 if (isBotAnimating) return;
 const x01Screen = document.getElementById('screen-x01');
-if (!x01Screen.classList.contains('hidden') && !match.isFinished) {
+if (!x01Screen.classList.contains('hidden') && match.sessionId && !match.isFinished) {
 pendingTargetScreen = targetScreen;
 document.getElementById('exit-modal').classList.remove('hidden');
 } else {
@@ -1456,6 +1462,7 @@ wonLegsDartsHistory: []
 
 setupX01Screen();
 showScreen('screen-x01');
+pushCurrentHistoryState();
 
 checkAndRunBotTurn();
 }
