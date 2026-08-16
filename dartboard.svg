@@ -1,84 +1,128 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
   <defs>
-    <filter id="shadow">
-      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.4"/>
+  <!-- Drop Shadows -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="1" dy="3" stdDeviation="3" flood-color="#000" flood-opacity="0.4"/>
     </filter>
+
+    <!-- Robot Metallic Gradient -->
+    <linearGradient id="metal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F1F5F9"/>
+      <stop offset="50%" stop-color="#94A3B8"/>
+      <stop offset="100%" stop-color="#64748B"/>
+    </linearGradient>
+
+    <!-- Cyan Visor Glow -->
+    <linearGradient id="cyan-glow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+
+    <!-- Ear Accent Gradient -->
+    <linearGradient id="ear-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F43F5E"/>
+      <stop offset="100%" stop-color="#BE123C"/>
+    </linearGradient>
+
+    <!-- Circular Clipping Path for Board Edge -->
+    <clipPath id="board-clip">
+      <circle cx="100" cy="100" r="84"/>
+    </clipPath>
+
+    <!-- Wedge Type A: Dark single beds, Red double/triple rings -->
+    <g id="wedge-A">
+      <!-- Double Ring (Red) -->
+      <path d="M 86.86 17.28 A 84 84 0 0 1 113.14 17.28 L 111.89 25.15 A 76 76 0 0 0 88.11 25.15 Z" fill="#DC2626"/>
+      <!-- Outer Single Bed (Dark) -->
+      <path d="M 88.11 25.15 A 76 76 0 0 1 111.89 25.15 L 107.83 50.31 A 50 50 0 0 0 92.17 50.31 Z" fill="#1C1917"/>
+      <!-- Triple Ring (Red) -->
+      <path d="M 92.17 50.31 A 50 50 0 0 1 107.83 50.31 L 106.58 57.19 A 43 43 0 0 0 93.42 57.19 Z" fill="#DC2626"/>
+      <!-- Inner Single Bed (Dark) -->
+      <path d="M 93.42 57.19 A 43 43 0 0 1 106.58 57.19 L 102.26 83.32 A 14 14 0 0 0 97.74 83.32 Z" fill="#1C1917"/>
+    </g>
+
+    <!-- Wedge Type B: Cream single beds, Green double/triple rings -->
+    <g id="wedge-B">
+      <!-- Double Ring (Green) -->
+      <path d="M 86.86 17.28 A 84 84 0 0 1 113.14 17.28 L 111.89 25.15 A 76 76 0 0 0 88.11 25.15 Z" fill="#16A34A"/>
+      <!-- Outer Single Bed (Cream) -->
+      <path d="M 88.11 25.15 A 76 76 0 0 1 111.89 25.15 L 107.83 50.31 A 50 50 0 0 0 92.17 50.31 Z" fill="#F5F5F4"/>
+      <!-- Triple Ring (Green) -->
+      <path d="M 92.17 50.31 A 50 50 0 0 1 107.83 50.31 L 106.58 57.19 A 43 43 0 0 0 93.42 57.19 Z" fill="#16A34A"/>
+      <!-- Inner Single Bed (Cream) -->
+      <path d="M 93.42 57.19 A 43 43 0 0 1 106.58 57.19 L 102.26 83.32 A 14 14 0 0 0 97.74 83.32 Z" fill="#F5F5F4"/>
+    </g>
   </defs>
 
-  <!-- Outer Border Circle (Dark) -->
-  <circle cx="100" cy="100" r="95" fill="#1F2937" filter="url(#shadow)"/>
+  <!-- ==================== 1. DARTBOARD (Background) ==================== -->
+  <g id="dartboard" filter="url(#shadow)">
+    <!-- Outer Board Surround -->
+    <circle cx="100" cy="100" r="95" fill="#0F172A" stroke="#334155" stroke-width="2"/>
+    <circle cx="100" cy="100" r="88" fill="#1E293B"/>
 
-  <!-- Outer Ring Segments (Black and Cream alternating with black border) -->
-  <circle cx="100" cy="100" r="88" fill="none" stroke="#000" stroke-width="2"/>
-  
-  <!-- Black and Cream outer segments -->
-  <g id="outer-segments">
-    <circle cx="100" cy="18" r="8" fill="#1F2937"/>
-    <circle cx="143" cy="32" r="8" fill="#F3F4F6"/>
-    <circle cx="168" cy="57" r="8" fill="#1F2937"/>
-    <circle cx="182" cy="100" r="8" fill="#F3F4F6"/>
-    <circle cx="168" cy="143" r="8" fill="#1F2937"/>
-    <circle cx="143" cy="168" r="8" fill="#F3F4F6"/>
-    <circle cx="100" cy="182" r="8" fill="#1F2937"/>
-    <circle cx="57" cy="168" r="8" fill="#F3F4F6"/>
-    <circle cx="32" cy="143" r="8" fill="#1F2937"/>
-    <circle cx="18" cy="100" r="8" fill="#F3F4F6"/>
-    <circle cx="32" cy="57" r="8" fill="#1F2937"/>
-    <circle cx="57" cy="32" r="8" fill="#F3F4F6"/>
+    <!-- 20 Alternating Wedges (Rotated by 18 degrees each) -->
+    <g clip-path="url(#board-clip)">
+      <use href="#wedge-A" transform="rotate(0 100 100)"/>
+      <use href="#wedge-B" transform="rotate(18 100 100)"/>
+      <use href="#wedge-A" transform="rotate(36 100 100)"/>
+      <use href="#wedge-B" transform="rotate(54 100 100)"/>
+      <use href="#wedge-A" transform="rotate(72 100 100)"/>
+      <use href="#wedge-B" transform="rotate(90 100 100)"/>
+      <use href="#wedge-A" transform="rotate(108 100 100)"/>
+      <use href="#wedge-B" transform="rotate(126 100 100)"/>
+      <use href="#wedge-A" transform="rotate(144 100 100)"/>
+      <use href="#wedge-B" transform="rotate(162 100 100)"/>
+      <use href="#wedge-A" transform="rotate(180 100 100)"/>
+      <use href="#wedge-B" transform="rotate(198 100 100)"/>
+      <use href="#wedge-A" transform="rotate(216 100 100)"/>
+      <use href="#wedge-B" transform="rotate(234 100 100)"/>
+      <use href="#wedge-A" transform="rotate(252 100 100)"/>
+      <use href="#wedge-B" transform="rotate(270 100 100)"/>
+      <use href="#wedge-A" transform="rotate(288 100 100)"/>
+      <use href="#wedge-B" transform="rotate(306 100 100)"/>
+      <use href="#wedge-A" transform="rotate(324 100 100)"/>
+      <use href="#wedge-B" transform="rotate(342 100 100)"/>
+
+      <!-- Bullseye -->
+      <circle cx="100" cy="100" r="14" fill="#16A34A"/>
+      <circle cx="100" cy="100" r="6" fill="#DC2626"/>
+      <circle cx="98.5" cy="98.5" r="1.5" fill="#FFF" opacity="0.6"/>
+    </g>
   </g>
 
-  <!-- Triple Ring (Gold/Yellow border) -->
-  <circle cx="100" cy="100" r="75" fill="none" stroke="#F59E0B" stroke-width="4"/>
-  <circle cx="100" cy="100" r="70" fill="none" stroke="#000" stroke-width="1"/>
+  <!-- ==================== 2. CARTOON ROBOT HEAD (Foreground Cover ~30%) ==================== -->
+  <g id="robot-head" transform="translate(60, 102)" filter="url(#shadow)">
+    <!-- Antenna Stem & Orb -->
+    <rect x="58" y="-14" width="8" height="16" fill="#475569" rx="2"/>
+    <circle cx="62" cy="-18" r="8" fill="url(#ear-grad)"/>
+    <circle cx="60" cy="-20" r="2.5" fill="#FFF" opacity="0.8"/>
 
-  <!-- Single Play Area - Cream background -->
-  <circle cx="100" cy="100" r="69" fill="#F3F4F6"/>
-  
-  <!-- Double Ring (Red border) -->
-  <circle cx="100" cy="100" r="38" fill="none" stroke="#DC2626" stroke-width="4"/>
-  <circle cx="100" cy="100" r="33" fill="none" stroke="#000" stroke-width="1"/>
+    <!-- Neck Connector -->
+    <rect x="42" y="74" width="40" height="16" fill="#334155" rx="4"/>
+    <line x1="48" y1="80" x2="76" y2="80" stroke="#64748B" stroke-width="2" stroke-dasharray="3 3"/>
 
-  <!-- Inner Single Play Area - Black -->
-  <circle cx="100" cy="100" r="32" fill="#1F2937"/>
+    <!-- Ears / Side Bolts -->
+    <rect x="8" y="26" width="10" height="24" fill="url(#ear-grad)" rx="3"/>
+    <rect x="106" y="26" width="10" height="24" fill="url(#ear-grad)" rx="3"/>
 
-  <!-- Bull's Eye (Outer ring - Green) -->
-  <circle cx="100" cy="100" r="18" fill="#059669"/>
-  <circle cx="100" cy="100" r="16" fill="none" stroke="#000" stroke-width="1"/>
+    <!-- Main Head Shell -->
+    <rect x="16" y="0" width="92" height="76" rx="20" fill="url(#metal)" stroke="#334155" stroke-width="3.5"/>
 
-  <!-- Bull's Eye (Inner - Red) -->
-  <circle cx="100" cy="100" r="12" fill="#EF4444"/>
+    <!-- Head Specular Highlight -->
+    <path d="M 28 8 Q 62 4 96 8" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
 
-  <!-- Segment dividing lines (bold) -->
-  <g id="segments" stroke="#000" stroke-width="1.5" opacity="0.5">
-    <line x1="100" y1="10" x2="100" y2="190"/>
-    <line x1="100" y1="10" x2="100" y2="190" transform="rotate(18 100 100)"/>
-    <line x1="100" y1="10" x2="100" y2="190" transform="rotate(36 100 100)"/>
-    <line x1="100" y1="10" x2="100" y2="190" transform="rotate(54 100 100)"/>
-    <line x1="100" y1="10" x2="100" y2="190" transform="rotate(72 100 100)"/>
-    <line x1="100" y1="10" x2="100" y2="190" transform="rotate(90 100 100)"/>
-    <line x1="100" y1="10" x2="100" y2="190" transform="rotate(108 100 100)"/>
-    <line x1="100" y1="10" x2="100" y2="190" transform="rotate(126 100 100)"/>
-    <line x1="100" y1="10" x2="100" y2="190" transform="rotate(144 100 100)"/>
-    <line x1="100" y1="10" x2="100" y2="190" transform="rotate(162 100 100)"/>
+    <!-- Visor / Eye Screen Base -->
+    <rect x="26" y="16" width="72" height="34" rx="12" fill="#0F172A" stroke="#475569" stroke-width="2"/>
+
+    <!-- Glowing Robot Eyes -->
+    <circle cx="44" cy="33" r="9" fill="url(#cyan-glow)"/>
+    <circle cx="46" cy="30" r="3" fill="#FFFFFF"/>
+    <circle cx="80" cy="33" r="9" fill="url(#cyan-glow)"/>
+    <circle cx="82" cy="30" r="3" fill="#FFFFFF"/>
+
+    <!-- Cheerful Robot Mouth & Cheeks -->
+    <path d="M 42 58 Q 62 68 82 58" fill="none" stroke="#334155" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="30" cy="54" r="5" fill="#FB7185" opacity="0.4"/>
+    <circle cx="94" cy="54" r="5" fill="#FB7185" opacity="0.4"/>
   </g>
-
-  <!-- Number Labels (Bold and Cartoon style) -->
-  <text x="100" y="18" text-anchor="middle" font-size="14" font-weight="bold" fill="#F59E0B" font-family="Arial">20</text>
-  <text x="157" y="35" text-anchor="middle" font-size="14" font-weight="bold" fill="#F59E0B" font-family="Arial">1</text>
-  <text x="177" y="60" text-anchor="middle" font-size="14" font-weight="bold" fill="#F59E0B" font-family="Arial">18</text>
-  <text x="182" y="104" text-anchor="middle" font-size="14" font-weight="bold" fill="#F59E0B" font-family="Arial">4</text>
-  <text x="177" y="143" text-anchor="middle" font-size="14" font-weight="bold" fill="#F59E0B" font-family="Arial">13</text>
-  <text x="157" y="165" text-anchor="middle" font-size="14" font-weight="bold" fill="#F59E0B" font-family="Arial">6</text>
-  <text x="100" y="185" text-anchor="middle" font-size="14" font-weight="bold" fill="#F59E0B" font-family="Arial">10</text>
-  <text x="43" y="165" text-anchor="middle" font-size="14" font-weight="bold" fill="#F59E0B" font-family="Arial">15</text>
-  <text x="23" y="143" text-anchor="middle" font-size="14" font-weight="bold" fill="#F59E0B" font-family="Arial">2</text>
-  <text x="18" y="104" text-anchor="middle" font-size="14" font-weight="bold" fill="#F59E0B" font-family="Arial">17</text>
-  <text x="23" y="60" text-anchor="middle" font-size="14" font-weight="bold" fill="#F59E0B" font-family="Arial">3</text>
-  <text x="43" y="35" text-anchor="middle" font-size="14" font-weight="bold" fill="#F59E0B" font-family="Arial">19</text>
-
-  <!-- Highlight/Shine effect on bull's eye for cartoon look -->
-  <circle cx="95" cy="95" r="3" fill="white" opacity="0.6"/>
-  
-  <!-- Cartoon star/sparkle around bull's eye -->
-  <path d="M100,75 L102,85 L112,87 L104,93 L106,103 L100,99 L94,103 L96,93 L88,87 L98,85 Z" fill="#FCD34D" opacity="0.3"/>
 </svg>
