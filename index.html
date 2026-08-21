@@ -62,7 +62,7 @@ transform: scale(0.96);
 <header class="bg-slate-950 px-3 py-1 flex items-center justify-between border-b border-slate-700 h-10 flex-shrink-0">
 <div class="flex items-center space-x-2">
 <i class="fa-solid fa-crosshair text-red-500 text-base"></i>
-<span class="font-bold text-sm tracking-wide text-slate-100" id="header-title">My Darts App</span>
+<span class="font-bold text-sm tracking-wide text-slate-100" id="header-title">501 Dart Bot Score Tracker</span>
 </div>
 <div class="flex items-center space-x-1">
 <button id="btn-nav-menu" onclick="playAudio('click'); confirmHomeExit()" class="p-1.5 text-slate-300 hover:text-white rounded active:bg-slate-800 text-sm">
@@ -83,7 +83,7 @@ transform: scale(0.96);
 <!-- ================= 1. MAIN MENU SCREEN ================= -->
 <section id="screen-menu" class="absolute inset-0 p-4 flex flex-col justify-between bg-slate-900 z-10 overflow-y-auto">
 <div class="text-center py-0.5">
-<h1 class="text-2xl font-black text-amber-500 tracking-wider">MY DARTS APP</h1>
+<h1 class="text-2xl font-black text-amber-500 tracking-wider">501 Dart Bot Score Tracker</h1>
 <p class="text-xs text-slate-400">Score, Stats, and Dartbots</p>
 </div>
 
@@ -1263,7 +1263,7 @@ const botBadge = p.isBot ? '<span class="ml-1 px-1.5 py-0.5 text-[9px] bg-amber-
 
 let actionButtons = '';
 if (p.isBot) {
-actionButtons = '<span class="text-[10px] text-slate-500 italic pr-2">Protected System Profile</span>';
+actionButtons = '<span class="text-[10px] text-slate-500 italic pr-2">Automated Bot</span>';
 } else {
 actionButtons = '<button onclick="playAudio(\'click\'); selectProfileForEditing(\'' + p.id + '\')" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-xs font-bold rounded text-amber-300">Edit Favs</button>' +
 '<button onclick="playAudio(\'click\'); promptDeleteProfile(\'' + p.id + '\')" class="px-2 py-1 bg-rose-900/60 hover:bg-rose-800 text-xs font-bold rounded text-rose-300"><i class="fa-solid fa-trash"></i></button>';

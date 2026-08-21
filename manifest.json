@@ -1,5 +1,5 @@
 {
-  "name": "My Darts Score Tracker",
+  "name": "501 Dart Bot Score Tracker",
   "short_name": "Darts Tracker",
   "description": "A progressive web app for tracking darts scores offline with player profiles and statistics",
   "start_url": "./index.html",

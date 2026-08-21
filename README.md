@@ -1,4 +1,4 @@
-# My Darts Score Tracker - Progressive Web App
+# 501 Dart Bot Score Tracker - Progressive Web App
 
 This app has been converted to a **Progressive Web App (PWA)** and can be **fully installed** on your Samsung phone as a standalone app (not just a shortcut).
 
